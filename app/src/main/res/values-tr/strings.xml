@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+    <string name="tab_live">Canlı TV</string>
+    <string name="tab_films">Filmler</string>
+    <string name="tab_vod">VOD</string>
+    <string name="tab_series">Diziler</string>
+    <string name="tab_favorites">Favoriler</string>
+    <string name="tab_recent">Son İzlenen</string>
+    <string name="tab_settings">Ayarlar</string>
+    <string name="all_channels">Tüm Kanallar</string>
+    <string name="search_hint">Kanal ara…</string>
+    <string name="no_playlist">Oynatma listesi yapılandırılmadı</string>
+    <string name="add_playlist">Liste Ekle</string>
+    <string name="loading">Yükleniyor…</string>
+    <string name="channels_count">%d kanal</string>
+    <string name="settings_title">Ayarlar</string>
+    <string name="playlist_name">Liste Adı</string>
+    <string name="playlist_type_m3u">M3U URL</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">M3U / M3U8 URL</string>
+    <string name="xtream_server">Sunucu URL (http://…)</string>
+    <string name="xtream_username">Kullanıcı Adı</string>
+    <string name="xtream_password">Şifre</string>
+    <string name="btn_test">Bağlantıyı Test Et</string>
+    <string name="btn_save">Kaydet</string>
+    <string name="btn_delete">Sil</string>
+    <string name="test_success">Bağlantı başarılı! (%d kanal)</string>
+    <string name="test_failed">Bağlantı başarısız: %s</string>
+    <string name="saved">Liste kaydedildi</string>
+    <string name="epg_url">EPG URL (isteğe bağlı)</string>
+    <string name="no_epg">Program bilgisi yok</string>
+    <string name="added_favorite">Favorilere eklendi</string>
+    <string name="removed_favorite">Favorilerden kaldırıldı</string>
+    <string name="epg_now">Şimdi: %s</string>
+    <string name="epg_next">Sonraki: %s</string>
+    <string name="catchup_available">Tekrar izleme mevcut</string>
+    <string name="catchup_playing">Tekrar: %s</string>
+    <string name="error_no_url">URL girin</string>
+    <string name="error_no_server">Sunucu URL girin</string>
+    <string name="error_no_credentials">Kullanıcı adı ve şifre girin</string>
+    <string name="error_loading">Yükleme hatası: %s</string>
+    <string name="loading_connecting">Sunucuya bağlanılıyor…</string>
+    <string name="loading_channels">Kanallar yükleniyor… %d</string>
+    <string name="loading_vod">Filmler yükleniyor… %d</string>
+    <string name="loading_series">Diziler yükleniyor… %d</string>
+    <string name="loading_detecting">Ülkeler belirleniyor…</string>
+    <string name="loading_saving">%d öğe kaydediliyor…</string>
+    <string name="filter_title">Akıllı Filtre</string>
+    <string name="filter_subtitle">Gösterilecek ülkeleri/bölgeleri seçin. Gizlemek için işareti kaldırın.</string>
+    <string name="filter_show_all">Tümünü Göster</string>
+    <string name="filter_invert">Ters Çevir</string>
+    <string name="filter_only">Sadece</string>
+    <string name="filter_apply">Uygula</string>
+    <string name="filter_applied">Filtreler uygulandı!</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">İzlemeye devam et</string>
+    <string name="section_favorites">Favoriler</string>
+    <string name="section_live">Canlı TV</string>
+    <string name="section_vod">Popüler Filmler</string>
+    <string name="section_series">Diziler</string>
+
+    <!-- EPG -->
+    <string name="epg_title">TV Rehberi</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">İzle</string>
+    <string name="btn_trailer">Fragman</string>
+    <string name="detail_seasons">Sezonlar</string>
+    <string name="detail_episodes">Bölümler</string>
+    <string name="detail_similar">Benzer</string>
+    <string name="detail_details">Ayrıntılar</string>
+    <string name="detail_cast">Oyuncular</string>
+    <string name="detail_director">Yönetmen</string>
+</resources>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Accueil</string>
+    <string name="tab_live">En direct</string>
+    <string name="tab_films">Films</string>
+    <string name="tab_series">Séries</string>
+    <string name="tab_favorites">Favoris</string>
+    <string name="tab_recent">Récent</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_vod">VOD</string>
+
+    <!-- Main -->
+    <string name="all_channels">All Channels</string>
+    <string name="search_hint">Search channels…</string>
+    <string name="no_playlist">No playlist configured</string>
+    <string name="add_playlist">Add Playlist</string>
+    <string name="loading">Loading…</string>
+    <string name="channels_count">%d channels</string>
+    <string name="no_channels">No channels found</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="playlist_name">Playlist Name</string>
+    <string name="playlist_type_m3u">M3U URL</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">M3U / M3U8 URL</string>
+    <string name="xtream_server">Server URL (http://...)</string>
+    <string name="xtream_username">Username</string>
+    <string name="xtream_password">Password</string>
+    <string name="btn_test">Test Connection</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_delete">Delete</string>
+    <string name="test_success">Connection successful! (%d channels)</string>
+    <string name="test_failed">Connection failed: %s</string>
+    <string name="saved">Playlist saved</string>
+    <string name="epg_url">EPG URL (optional)</string>
+
+    <!-- Player -->
+    <string name="no_epg">No program info</string>
+    <string name="added_favorite">Added to favorites</string>
+    <string name="removed_favorite">Removed from favorites</string>
+    <string name="epg_now">Now: %s</string>
+    <string name="epg_next">Next: %s</string>
+    <string name="catchup_available">Catch-up available</string>
+    <string name="catchup_playing">Catch-up: %s</string>
+
+    <!-- Premium -->
+    <string name="premium_title">NoorIPTV Pro</string>
+    <string name="premium_subtitle">Unlock all features</string>
+    <string name="premium_feature_playlists">Unlimited playlists</string>
+    <string name="premium_feature_epg">Live EPG guide</string>
+    <string name="premium_feature_catchup">Catch-up / Replay</string>
+    <string name="premium_feature_filter">Smart country filter</string>
+    <string name="premium_feature_vod">VOD &amp; Series</string>
+    <string name="premium_feature_multiview">Picture-in-Picture</string>
+    <string name="premium_buy">Activate</string>
+    <string name="premium_restore">Restore Purchase</string>
+    <string name="premium_active">Pro activated</string>
+    <string name="feature_locked">Pro feature — Upgrade to unlock</string>
+    <string name="web_companion_title">Manage from your phone</string>
+    <string name="web_companion_subtitle">Scan this QR code with your phone to add playlists, activate Pro, and manage your account.</string>
+    <string name="device_id_label">Device ID: %s</string>
+    <string name="waiting_for_sync">Waiting for data from phone…</string>
+    <string name="pro_activated_web">Pro activated from web!</string>
+    <string name="playlist_synced">Playlist added: %s</string>
+    <string name="saved_playlists">Saved Playlists</string>
+    <string name="manual_add">Add playlist manually</string>
+    <string name="manual_hide">Hide manual input</string>
+    <string name="qr_instructions">Scan with your phone</string>
+
+    <!-- Player Actions -->
+    <string name="action_tv_guide">Guide</string>
+    <string name="action_search">Search</string>
+    <string name="action_channels">Channels</string>
+    <string name="action_audio">Audio</string>
+    <string name="action_subtitles">Subtitles</string>
+    <string name="no_program_info">No program info</string>
+
+    <!-- Settings sections -->
+    <string name="settings_player_title">Player</string>
+    <string name="settings_general_title">General</string>
+    <string name="settings_buffer">Buffer size</string>
+    <string name="settings_decoder">Decoder</string>
+    <string name="settings_aspect_ratio">Aspect ratio</string>
+    <string name="settings_clear_cache">Clear image cache</string>
+    <string name="cache_cleared">Cache cleared</string>
+    <string name="settings_version">Version</string>
+
+    <!-- Errors -->
+    <string name="error_no_url">Enter a URL</string>
+    <string name="error_no_server">Enter server URL</string>
+    <string name="error_no_credentials">Enter username and password</string>
+    <string name="error_loading">Error loading: %s</string>
+
+    <!-- Loading progress -->
+    <string name="loading_connecting">Connecting to server…</string>
+    <string name="loading_channels">Loading channels… %d</string>
+    <string name="loading_vod">Loading movies… %d</string>
+    <string name="loading_series">Loading series… %d</string>
+    <string name="loading_detecting">Detecting countries…</string>
+    <string name="loading_saving">Saving %d items…</string>
+
+    <!-- Smart Filter -->
+    <string name="filter_title">Smart Filter</string>
+    <string name="filter_subtitle">Select which countries/regions to show. Uncheck to hide.</string>
+    <string name="filter_show_all">Show All</string>
+    <string name="filter_invert">Invert</string>
+    <string name="filter_only">Only</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_applied">Filters applied!</string>
+
+    <!-- Movie Detail -->
+    <string name="play_movie">Play</string>
+    <string name="play_series">Play Series</string>
+    <string name="play_episode">Play E%d</string>
+    <string name="action_play">Play %s</string>
+    <string name="detail_cast">Cast:</string>
+    <string name="detail_director">Director:</string>
+    <string name="more_like_this">More Like This</string>
+    <string name="season_label">Season</string>
+    <string name="trailer">Trailer</string>
+    <string name="skip_intro">Skip Intro</string>
+    <string name="up_next">Up Next</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">Continuer à regarder</string>
+    <string name="section_favorites">Favoris</string>
+    <string name="section_live">En direct</string>
+    <string name="section_vod">Films populaires</string>
+    <string name="section_series">Séries</string>
+
+    <!-- Search filter -->
+    <string name="hint_search_filter">Rechercher…</string>
+    <string name="no_results">Aucun résultat</string>
+
+    <!-- EPG -->
+    <string name="epg_title">Guide TV</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">Regarder</string>
+    <string name="btn_trailer">Bande-annonce</string>
+    <string name="detail_seasons">Saisons</string>
+    <string name="detail_episodes">Épisodes</string>
+    <string name="detail_similar">Similaire</string>
+    <string name="detail_details">Détails</string>
+</resources>

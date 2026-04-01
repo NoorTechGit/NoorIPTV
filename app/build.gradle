@@ -1,0 +1,108 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.devtools.ksp'
+}
+
+android {
+    namespace 'com.salliptv.player'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.salliptv.app"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('salliptv-release.jks')
+            storePassword 'salliptv123'
+            keyAlias 'salliptv'
+            keyPassword 'salliptv123'
+        }
+    }
+
+    flavorDimensions "tier"
+    productFlavors {
+        free {
+            dimension "tier"
+            buildConfigField "boolean", "FORCE_PREMIUM", "false"
+            buildConfigField "String", "TMDB_API_KEY", "\"d4a29f9d1a308bcb2103ef52c53feb9b\""
+        }
+        premium {
+            dimension "tier"
+            buildConfigField "boolean", "FORCE_PREMIUM", "true"
+            buildConfigField "String", "TMDB_API_KEY", "\"d4a29f9d1a308bcb2103ef52c53feb9b\""
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.leanback:leanback:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.cardview:cardview:1.0.0'
+
+    // DpadRecyclerView for Android TV focus-aware horizontal scrolling
+    implementation 'com.rubensousa.dpadrecyclerview:dpadrecyclerview:1.3.0'
+
+    // Lifecycle + ViewModel + Coroutines
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+    implementation 'androidx.activity:activity-ktx:1.8.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+
+    // ExoPlayer (Media3)
+    implementation 'androidx.media3:media3-exoplayer:1.2.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.2.1'
+    implementation 'androidx.media3:media3-exoplayer-rtsp:1.2.1'
+    implementation 'androidx.media3:media3-ui:1.2.1'
+
+    // Network
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Images
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+
+    // Database
+    implementation 'androidx.room:room-runtime:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    ksp 'androidx.room:room-compiler:2.6.1'
+
+    // Google Play Billing
+    implementation 'com.android.billingclient:billing:6.1.0'
+    implementation 'com.android.billingclient:billing-ktx:6.1.0'
+
+    // QR Code generation
+    implementation 'com.google.zxing:core:3.5.3'
+}

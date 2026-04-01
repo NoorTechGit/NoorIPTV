@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Apple tvOS style dark palette -->
+    <color name="background_dark">#000000</color>
+    <color name="sidebar_dark">#121212</color>
+    <color name="card_dark">#1C1C1E</color>
+    <color name="accent">#0A84FF</color>
+    <color name="accent_light">#5E5CE6</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="overlay_bg">#B3000000</color>
+    <color name="focused_bg">#33FFFFFF</color>
+    <color name="surface">#2C2C2E</color>
+    <color name="separator">#38383A</color>
+
+    <!-- Apple TV Home Screen -->
+    <color name="color_tab_active">#FFFFFF</color>
+    <color name="color_tab_inactive">#8E8E93</color>
+    <color name="focus_border">#0A84FF</color>
+    <color name="color_card_background">#1C1C1E</color>
+    <color name="gradient_start">#00000000</color>
+    <color name="gradient_end">#CC000000</color>
+    <color name="bottom_bar_bg">#E6000000</color>
+</resources>

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Apple TV style EPG Grid
+    Colors: #000000 bg, #1C1C1E cards, #0A84FF accent, #FFFFFF text, #8E8E93 secondary
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- ================================================ -->
+    <!-- TOP BAR: "Guide TV" title + date                 -->
+    <!-- ================================================ -->
+    <LinearLayout
+        android:id="@+id/epg_top_bar"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:background="#000000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- "Guide TV" title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Guide TV"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <!-- Spacer -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Date display -->
+        <TextView
+            android:id="@+id/tv_epg_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#8E8E93"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
+
+    <!-- Thin divider below top bar -->
+    <View
+        android:id="@+id/divider_top"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#1C1C1E"
+        app:layout_constraintTop_toBottomOf="@id/epg_top_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================================================ -->
+    <!-- TIME HEADER ROW                                  -->
+    <!-- Fixed corner (200dp) + horizontally scrolling    -->
+    <!-- time slots (one slot = 1 hour = 300dp wide)      -->
+    <!-- ================================================ -->
+    <LinearLayout
+        android:id="@+id/epg_time_header_row"
+        android:layout_width="0dp"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/divider_top"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Empty corner block, same width as channel sidebar -->
+        <View
+            android:layout_width="200dp"
+            android:layout_height="match_parent"
+            android:background="#0A0A0A" />
+
+        <!-- Scrollable time labels — synced with programs HorizontalScrollView -->
+        <HorizontalScrollView
+            android:id="@+id/hsv_time_header"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:scrollbars="none"
+            android:background="#0A0A0A">
+
+            <LinearLayout
+                android:id="@+id/ll_time_slots"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- Divider below time header -->
+    <View
+        android:id="@+id/divider_time"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#1C1C1E"
+        app:layout_constraintTop_toBottomOf="@id/epg_time_header_row"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================================================ -->
+    <!-- MAIN CONTENT AREA: channel sidebar + program grid -->
+    <!-- ================================================ -->
+    <LinearLayout
+        android:id="@+id/epg_main_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/divider_time"
+        app:layout_constraintBottom_toTopOf="@id/divider_bottom"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Channel sidebar (200dp, vertical RecyclerView) -->
+        <!-- Each row: logo + channel name, synced with program rows -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_epg_channels"
+            android:layout_width="200dp"
+            android:layout_height="match_parent"
+            android:background="#0A0A0A"
+            android:scrollbars="none" />
+
+        <!-- Vertical divider between sidebar and grid -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#1C1C1E" />
+
+        <!-- Programs area: HorizontalScrollView wrapping vertical RecyclerView -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <HorizontalScrollView
+                android:id="@+id/hsv_programs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="none">
+
+                <!-- Vertical RecyclerView; each row = one channel's programs -->
+                <!-- Program blocks within a row are laid out horizontally     -->
+                <!-- Each row is a horizontal LinearLayout of program blocks   -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_epg_programs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:scrollbars="none" />
+            </HorizontalScrollView>
+
+            <!-- "Now" time indicator line -->
+            <View
+                android:id="@+id/view_now_indicator"
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:background="#0A84FF"
+                android:alpha="0.7" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- Divider above bottom info bar -->
+    <View
+        android:id="@+id/divider_bottom"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#1C1C1E"
+        app:layout_constraintBottom_toTopOf="@id/epg_info_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================================================ -->
+    <!-- BOTTOM INFO BAR: selected program details        -->
+    <!-- Shows on channel/program focus                   -->
+    <!-- ================================================ -->
+    <LinearLayout
+        android:id="@+id/epg_info_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#1C1C1E"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Channel logo thumbnail -->
+        <ImageView
+            android:id="@+id/iv_epg_channel_logo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="fitCenter"
+            android:layout_marginEnd="14dp" />
+
+        <!-- Program title + time -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_epg_program_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tv_epg_program_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#8E8E93"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:paddingTop="2dp" />
+        </LinearLayout>
+
+        <!-- Program description (takes remaining space) -->
+        <TextView
+            android:id="@+id/tv_epg_program_desc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.2"
+            android:textColor="#8E8E93"
+            android:textSize="13sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp" />
+
+        <!-- "Regarder" button: visible for current/catchup program -->
+        <TextView
+            android:id="@+id/btn_epg_watch"
+            android:layout_width="100dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="Regarder"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/bg_play_button"
+            android:focusable="true"
+                android:focusableInTouchMode="true"            android:clickable="true"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

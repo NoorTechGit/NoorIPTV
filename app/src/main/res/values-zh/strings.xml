@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+    <string name="tab_live">直播</string>
+    <string name="tab_films">电影</string>
+    <string name="tab_vod">点播</string>
+    <string name="tab_series">电视剧</string>
+    <string name="tab_favorites">收藏</string>
+    <string name="tab_recent">最近观看</string>
+    <string name="tab_settings">设置</string>
+    <string name="all_channels">所有频道</string>
+    <string name="search_hint">搜索频道…</string>
+    <string name="no_playlist">未配置播放列表</string>
+    <string name="add_playlist">添加播放列表</string>
+    <string name="loading">加载中…</string>
+    <string name="channels_count">%d 个频道</string>
+    <string name="settings_title">设置</string>
+    <string name="playlist_name">播放列表名称</string>
+    <string name="playlist_type_m3u">M3U 链接</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">M3U / M3U8 链接</string>
+    <string name="xtream_server">服务器地址 (http://…)</string>
+    <string name="xtream_username">用户名</string>
+    <string name="xtream_password">密码</string>
+    <string name="btn_test">测试连接</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_delete">删除</string>
+    <string name="test_success">连接成功！(%d 个频道)</string>
+    <string name="test_failed">连接失败：%s</string>
+    <string name="saved">播放列表已保存</string>
+    <string name="epg_url">EPG 链接（可选）</string>
+    <string name="no_epg">无节目信息</string>
+    <string name="added_favorite">已添加到收藏</string>
+    <string name="removed_favorite">已从收藏移除</string>
+    <string name="epg_now">正在播出：%s</string>
+    <string name="epg_next">下一个：%s</string>
+    <string name="catchup_available">回看可用</string>
+    <string name="catchup_playing">回看：%s</string>
+    <string name="error_no_url">请输入链接</string>
+    <string name="error_no_server">请输入服务器地址</string>
+    <string name="error_no_credentials">请输入用户名和密码</string>
+    <string name="error_loading">加载错误：%s</string>
+    <string name="loading_connecting">正在连接服务器…</string>
+    <string name="loading_channels">正在加载频道… %d</string>
+    <string name="loading_vod">正在加载电影… %d</string>
+    <string name="loading_series">正在加载电视剧… %d</string>
+    <string name="loading_detecting">正在检测国家…</string>
+    <string name="loading_saving">正在保存 %d 个项目…</string>
+    <string name="filter_title">智能筛选</string>
+    <string name="filter_subtitle">选择要显示的国家/地区。取消勾选以隐藏。</string>
+    <string name="filter_show_all">全部显示</string>
+    <string name="filter_invert">反选</string>
+    <string name="filter_only">仅此</string>
+    <string name="filter_apply">应用</string>
+    <string name="filter_applied">筛选已应用！</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">继续观看</string>
+    <string name="section_favorites">收藏</string>
+    <string name="section_live">直播</string>
+    <string name="section_vod">热门电影</string>
+    <string name="section_series">电视剧</string>
+
+    <!-- EPG -->
+    <string name="epg_title">电视指南</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">观看</string>
+    <string name="btn_trailer">预告片</string>
+    <string name="detail_seasons">季</string>
+    <string name="detail_episodes">集</string>
+    <string name="detail_similar">相关推荐</string>
+    <string name="detail_details">详情</string>
+    <string name="detail_cast">演员表</string>
+    <string name="detail_director">导演</string>
+</resources>

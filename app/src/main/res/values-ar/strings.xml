@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+    <string name="tab_live">البث المباشر</string>
+    <string name="tab_films">أفلام</string>
+    <string name="tab_vod">فيديو حسب الطلب</string>
+    <string name="tab_series">مسلسلات</string>
+    <string name="tab_favorites">المفضلة</string>
+    <string name="tab_recent">الأخيرة</string>
+    <string name="tab_settings">الإعدادات</string>
+    <string name="all_channels">جميع القنوات</string>
+    <string name="search_hint">بحث عن القنوات…</string>
+    <string name="no_playlist">لم يتم تكوين قائمة تشغيل</string>
+    <string name="add_playlist">إضافة قائمة تشغيل</string>
+    <string name="loading">جاري التحميل…</string>
+    <string name="channels_count">%d قناة</string>
+    <string name="settings_title">الإعدادات</string>
+    <string name="playlist_name">اسم القائمة</string>
+    <string name="playlist_type_m3u">رابط M3U</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">رابط M3U / M3U8</string>
+    <string name="xtream_server">رابط الخادم (http://…)</string>
+    <string name="xtream_username">اسم المستخدم</string>
+    <string name="xtream_password">كلمة المرور</string>
+    <string name="btn_test">اختبار الاتصال</string>
+    <string name="btn_save">حفظ</string>
+    <string name="btn_delete">حذف</string>
+    <string name="test_success">تم الاتصال بنجاح! (%d قناة)</string>
+    <string name="test_failed">فشل الاتصال: %s</string>
+    <string name="saved">تم حفظ القائمة</string>
+    <string name="epg_url">رابط EPG (اختياري)</string>
+    <string name="no_epg">لا توجد معلومات البرنامج</string>
+    <string name="added_favorite">تمت الإضافة إلى المفضلة</string>
+    <string name="removed_favorite">تمت الإزالة من المفضلة</string>
+    <string name="epg_now">الآن: %s</string>
+    <string name="epg_next">التالي: %s</string>
+    <string name="catchup_available">الإعادة متاحة</string>
+    <string name="catchup_playing">إعادة: %s</string>
+    <string name="error_no_url">أدخل الرابط</string>
+    <string name="error_no_server">أدخل رابط الخادم</string>
+    <string name="error_no_credentials">أدخل اسم المستخدم وكلمة المرور</string>
+    <string name="error_loading">خطأ في التحميل: %s</string>
+    <string name="loading_connecting">جاري الاتصال بالخادم…</string>
+    <string name="loading_channels">تحميل القنوات… %d</string>
+    <string name="loading_vod">تحميل الأفلام… %d</string>
+    <string name="loading_series">تحميل المسلسلات… %d</string>
+    <string name="loading_detecting">اكتشاف البلدان…</string>
+    <string name="loading_saving">حفظ %d عنصر…</string>
+    <string name="filter_title">الفلتر الذكي</string>
+    <string name="filter_subtitle">اختر البلدان/المناطق لعرضها. ألغِ التحديد للإخفاء.</string>
+    <string name="filter_show_all">عرض الكل</string>
+    <string name="filter_invert">عكس</string>
+    <string name="filter_only">فقط</string>
+    <string name="filter_apply">تطبيق</string>
+    <string name="filter_applied">تم تطبيق الفلاتر!</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">متابعة المشاهدة</string>
+    <string name="section_favorites">المفضلة</string>
+    <string name="section_live">البث المباشر</string>
+    <string name="section_vod">أفلام شائعة</string>
+    <string name="section_series">المسلسلات</string>
+
+    <!-- EPG -->
+    <string name="epg_title">دليل التلفزيون</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">مشاهدة</string>
+    <string name="btn_trailer">إعلان الفيلم</string>
+    <string name="detail_seasons">مواسم</string>
+    <string name="detail_episodes">حلقات</string>
+    <string name="detail_similar">مشابه</string>
+    <string name="detail_details">تفاصيل</string>
+    <string name="detail_cast">طاقم التمثيل</string>
+    <string name="detail_director">المخرج</string>
+</resources>

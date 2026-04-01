@@ -1,0 +1,66 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="180dp"
+    android:height="42dp"
+    android:viewportWidth="180"
+    android:viewportHeight="42">
+
+    <!-- Noor light symbol (crosshair/star) -->
+    <path
+        android:pathData="M17,15 L17,11 M17,23 L17,27 M11,19 L7,19 M23,19 L27,19 M12.5,14.5 L10,12 M21.5,14.5 L24,12 M12.5,23.5 L10,26 M21.5,23.5 L24,26"
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000" />
+
+    <!-- Center dot -->
+    <path
+        android:pathData="M17,19 m-3,0 a3,3 0,1 1,6 0 a3,3 0,1 1,-6 0"
+        android:fillColor="#0A84FF" />
+
+    <!-- Inner ring -->
+    <path
+        android:pathData="M17,19 m-5.5,0 a5.5,5.5 0,1 1,11 0 a5.5,5.5 0,1 1,-11 0"
+        android:strokeColor="#005F88"
+        android:strokeWidth="0.8"
+        android:fillColor="#00000000" />
+
+    <!-- N -->
+    <path
+        android:pathData="M34,12 L38,12 L38,28 L48,12 L52,12 L52,34 L48,34 L48,18 L38,34 L34,34 Z"
+        android:fillColor="#0A84FF" />
+
+    <!-- o -->
+    <path
+        android:pathData="M56,20 Q56,15 62,15 Q68,15 68,20 L68,28 Q68,34 62,34 Q56,34 56,28 Z M60,20 L60,28 Q60,30 62,30 Q64,30 64,28 L64,20 Q64,18 62,18 Q60,18 60,20 Z"
+        android:fillColor="#0A84FF" />
+
+    <!-- o -->
+    <path
+        android:pathData="M72,20 Q72,15 78,15 Q84,15 84,20 L84,28 Q84,34 78,34 Q72,34 72,28 Z M76,20 L76,28 Q76,30 78,30 Q80,30 80,28 L80,20 Q80,18 78,18 Q76,18 76,20 Z"
+        android:fillColor="#0A84FF" />
+
+    <!-- r -->
+    <path
+        android:pathData="M88,15 L92,15 L92,19 Q93,15 97,15 L97,19 L95,19 Q92,19 92,22 L92,34 L88,34 Z"
+        android:fillColor="#0A84FF" />
+
+    <!-- I -->
+    <path
+        android:pathData="M104,12 L108,12 L108,34 L104,34 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- P -->
+    <path
+        android:pathData="M114,12 L124,12 Q129,12 129,17 L129,22 Q129,27 124,27 L118,27 L118,34 L114,34 Z M118,16 L118,23 L123,23 Q125,23 125,21 L125,18 Q125,16 123,16 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- T -->
+    <path
+        android:pathData="M132,12 L148,12 L148,16 L142,16 L142,34 L138,34 L138,16 L132,16 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- V -->
+    <path
+        android:pathData="M150,12 L154.5,12 L160,28 L165.5,12 L170,12 L162,34 L158,34 Z"
+        android:fillColor="#FFFFFF" />
+
+</vector>

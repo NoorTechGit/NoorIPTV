@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_main.xml  (portrait / phone)
+    Apple TV-style home screen:
+      - Pure black background
+      - Top bar: app logo + horizontal tab row
+      - Vertical RecyclerView of section carousels (recyclerSections)
+      - Bottom icon bar: Search | EPG | Settings
+    All original IDs required by MainActivity.java are preserved as
+    zero-size hidden views so the code compiles without changes.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_dark">
+
+    <!-- ================================================ -->
+    <!--  Main content: top-bar + carousels + bottom-bar  -->
+    <!-- ================================================ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- TOP BAR -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/gradient_top_bar"
+            android:paddingTop="12dp"
+            android:paddingBottom="6dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <!-- Logo row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="10dp">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/logo_salliptv"
+                    android:scaleType="fitStart"
+                    android:contentDescription="@string/app_name" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <!-- Tab chips -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingBottom="6dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_vis"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_home"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_live"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_live"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_vod"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_vod"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_series"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_series"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_favorites"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_favorites"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_recent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_recent"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:layout_marginEnd="20dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/tab_settings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tab_settings"
+                        android:textColor="#8E8E93"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:focusable="true"
+                android:focusableInTouchMode="true"                        android:clickable="true" />
+                </LinearLayout>
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- SECTION CAROUSELS -->
+        <!-- Hidden original categories RV (required by MainActivity code) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_categories"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <!-- Contextual search/filter bar (toggled by search icon) -->
+        <LinearLayout
+            android:id="@+id/search_filter_bar"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#1A1A1A"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:visibility="gone"
+            android:focusable="false">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_search"
+                android:layout_marginEnd="12dp"
+                android:alpha="0.5"
+                android:contentDescription="@null" />
+
+            <EditText
+                android:id="@+id/et_filter"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="@string/hint_search_filter"
+                android:textColorHint="#666666"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:singleLine="true"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <ImageView
+                android:id="@+id/btn_clear_filter"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_close"
+                android:scaleType="fitCenter"
+                android:padding="4dp"
+                android:clickable="true"
+                android:visibility="gone"
+                android:contentDescription="@null" />
+        </LinearLayout>
+
+        <!-- Loading indicator -->
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminateTint="@color/accent" />
+
+        <!-- Empty / error state -->
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-light"
+            android:gravity="center"
+            android:visibility="gone"
+            android:paddingTop="80dp" />
+
+        <!-- Main vertical RecyclerView — each row is an item_home_section -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerSections"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="64dp" />
+
+        <!-- Hidden channel grid (required by MainActivity code) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_channels"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- BOTTOM ICON BAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@color/bottom_bar_bg"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <!-- Search -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:focusable="true"
+                android:focusableInTouchMode="true"            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/icon_search"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_search"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recherche"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:paddingTop="3dp" />
+        </LinearLayout>
+
+        <!-- EPG -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:focusable="true"
+                android:focusableInTouchMode="true"            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/icon_epg"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_epg"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EPG"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:paddingTop="3dp" />
+        </LinearLayout>
+
+        <!-- Settings -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:focusable="true"
+                android:focusableInTouchMode="true"            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/icon_settings"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_settings"
+                android:scaleType="fitCenter"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Paramètres"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:paddingTop="3dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Hidden stubs required by MainActivity.java (zero-size, gone) -->
+    <TextView android:id="@+id/tv_category_name"     android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <TextView android:id="@+id/tv_channel_count"     android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+
+</FrameLayout>

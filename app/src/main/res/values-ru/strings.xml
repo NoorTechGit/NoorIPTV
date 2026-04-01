@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+    <string name="tab_live">Прямой эфир</string>
+    <string name="tab_films">Фильмы</string>
+    <string name="tab_vod">Видео</string>
+    <string name="tab_series">Сериалы</string>
+    <string name="tab_favorites">Избранное</string>
+    <string name="tab_recent">Недавние</string>
+    <string name="tab_settings">Настройки</string>
+    <string name="all_channels">Все каналы</string>
+    <string name="search_hint">Поиск каналов…</string>
+    <string name="no_playlist">Плейлист не настроен</string>
+    <string name="add_playlist">Добавить плейлист</string>
+    <string name="loading">Загрузка…</string>
+    <string name="channels_count">%d каналов</string>
+    <string name="settings_title">Настройки</string>
+    <string name="playlist_name">Название плейлиста</string>
+    <string name="playlist_type_m3u">M3U ссылка</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">M3U / M3U8 ссылка</string>
+    <string name="xtream_server">URL сервера (http://…)</string>
+    <string name="xtream_username">Имя пользователя</string>
+    <string name="xtream_password">Пароль</string>
+    <string name="btn_test">Проверить соединение</string>
+    <string name="btn_save">Сохранить</string>
+    <string name="btn_delete">Удалить</string>
+    <string name="test_success">Соединение успешно! (%d каналов)</string>
+    <string name="test_failed">Ошибка соединения: %s</string>
+    <string name="saved">Плейлист сохранён</string>
+    <string name="epg_url">EPG ссылка (необязательно)</string>
+    <string name="no_epg">Нет информации о программе</string>
+    <string name="added_favorite">Добавлено в избранное</string>
+    <string name="removed_favorite">Удалено из избранного</string>
+    <string name="epg_now">Сейчас: %s</string>
+    <string name="epg_next">Далее: %s</string>
+    <string name="catchup_available">Повтор доступен</string>
+    <string name="catchup_playing">Повтор: %s</string>
+    <string name="error_no_url">Введите ссылку</string>
+    <string name="error_no_server">Введите URL сервера</string>
+    <string name="error_no_credentials">Введите имя пользователя и пароль</string>
+    <string name="error_loading">Ошибка загрузки: %s</string>
+    <string name="loading_connecting">Подключение к серверу…</string>
+    <string name="loading_channels">Загрузка каналов… %d</string>
+    <string name="loading_vod">Загрузка фильмов… %d</string>
+    <string name="loading_series">Загрузка сериалов… %d</string>
+    <string name="loading_detecting">Определение стран…</string>
+    <string name="loading_saving">Сохранение %d элементов…</string>
+    <string name="filter_title">Умный фильтр</string>
+    <string name="filter_subtitle">Выберите страны/регионы для отображения. Снимите отметку, чтобы скрыть.</string>
+    <string name="filter_show_all">Показать все</string>
+    <string name="filter_invert">Инвертировать</string>
+    <string name="filter_only">Только</string>
+    <string name="filter_apply">Применить</string>
+    <string name="filter_applied">Фильтры применены!</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">Продолжить просмотр</string>
+    <string name="section_favorites">Избранное</string>
+    <string name="section_live">Прямой эфир</string>
+    <string name="section_vod">Популярные фильмы</string>
+    <string name="section_series">Сериалы</string>
+
+    <!-- EPG -->
+    <string name="epg_title">Телегид</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">Смотреть</string>
+    <string name="btn_trailer">Трейлер</string>
+    <string name="detail_seasons">Сезоны</string>
+    <string name="detail_episodes">Эпизоды</string>
+    <string name="detail_similar">Похожее</string>
+    <string name="detail_details">Подробности</string>
+    <string name="detail_cast">В ролях</string>
+    <string name="detail_director">Режиссёр</string>
+</resources>

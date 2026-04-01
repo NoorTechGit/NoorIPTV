@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="140dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:focusable="true"
+                android:focusableInTouchMode="true"    android:clickable="true"
+    android:background="@android:color/transparent">
+
+    <!-- Channel logo -->
+    <ImageView
+        android:id="@+id/iv_strip_logo"
+        android:layout_width="48dp"
+        android:layout_height="36dp"
+        android:scaleType="fitCenter" />
+
+    <!-- Channel number + name -->
+    <TextView
+        android:id="@+id/tv_strip_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#E8EAF0"
+        android:textSize="11sp"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingTop="3dp" />
+
+    <!-- EPG current program -->
+    <TextView
+        android:id="@+id/tv_strip_epg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#7A8BA0"
+        android:textSize="9sp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingTop="1dp" />
+</LinearLayout>

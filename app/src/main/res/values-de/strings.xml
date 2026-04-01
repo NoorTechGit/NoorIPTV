@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoorIPTV</string>
+    <string name="tab_live">Live-TV</string>
+    <string name="tab_films">Filme</string>
+    <string name="tab_vod">VOD</string>
+    <string name="tab_series">Serien</string>
+    <string name="tab_favorites">Favoriten</string>
+    <string name="tab_recent">Zuletzt</string>
+    <string name="tab_settings">Einstellungen</string>
+    <string name="all_channels">Alle Sender</string>
+    <string name="search_hint">Sender suchen…</string>
+    <string name="no_playlist">Keine Playlist konfiguriert</string>
+    <string name="add_playlist">Playlist hinzufügen</string>
+    <string name="loading">Laden…</string>
+    <string name="channels_count">%d Sender</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="playlist_name">Playlist-Name</string>
+    <string name="playlist_type_m3u">M3U-URL</string>
+    <string name="playlist_type_xtream">Xtream Codes</string>
+    <string name="m3u_url">M3U / M3U8 URL</string>
+    <string name="xtream_server">Server-URL (http://…)</string>
+    <string name="xtream_username">Benutzername</string>
+    <string name="xtream_password">Passwort</string>
+    <string name="btn_test">Verbindung testen</string>
+    <string name="btn_save">Speichern</string>
+    <string name="btn_delete">Löschen</string>
+    <string name="test_success">Verbindung erfolgreich! (%d Sender)</string>
+    <string name="test_failed">Verbindung fehlgeschlagen: %s</string>
+    <string name="saved">Playlist gespeichert</string>
+    <string name="epg_url">EPG-URL (optional)</string>
+    <string name="no_epg">Keine Programminformation</string>
+    <string name="added_favorite">Zu Favoriten hinzugefügt</string>
+    <string name="removed_favorite">Aus Favoriten entfernt</string>
+    <string name="epg_now">Jetzt: %s</string>
+    <string name="epg_next">Danach: %s</string>
+    <string name="catchup_available">Wiederholung verfügbar</string>
+    <string name="catchup_playing">Wiederholung: %s</string>
+    <string name="error_no_url">URL eingeben</string>
+    <string name="error_no_server">Server-URL eingeben</string>
+    <string name="error_no_credentials">Benutzername und Passwort eingeben</string>
+    <string name="error_loading">Fehler beim Laden: %s</string>
+    <string name="loading_connecting">Verbindung zum Server…</string>
+    <string name="loading_channels">Sender laden… %d</string>
+    <string name="loading_vod">Filme laden… %d</string>
+    <string name="loading_series">Serien laden… %d</string>
+    <string name="loading_detecting">Länder erkennen…</string>
+    <string name="loading_saving">%d Einträge speichern…</string>
+    <string name="filter_title">Intelligenter Filter</string>
+    <string name="filter_subtitle">Wählen Sie Länder/Regionen zum Anzeigen. Deaktivieren zum Ausblenden.</string>
+    <string name="filter_show_all">Alle anzeigen</string>
+    <string name="filter_invert">Umkehren</string>
+    <string name="filter_only">Nur</string>
+    <string name="filter_apply">Anwenden</string>
+    <string name="filter_applied">Filter angewendet!</string>
+
+    <!-- Home sections -->
+    <string name="section_continue_watching">Weiterschauen</string>
+    <string name="section_favorites">Favoriten</string>
+    <string name="section_live">Live-TV</string>
+    <string name="section_vod">Beliebte Filme</string>
+    <string name="section_series">Serien</string>
+
+    <!-- EPG -->
+    <string name="epg_title">TV-Programm</string>
+
+    <!-- Detail screen -->
+    <string name="btn_watch">Ansehen</string>
+    <string name="btn_trailer">Trailer</string>
+    <string name="detail_seasons">Staffeln</string>
+    <string name="detail_episodes">Episoden</string>
+    <string name="detail_similar">Ähnliches</string>
+    <string name="detail_details">Details</string>
+    <string name="detail_cast">Besetzung</string>
+    <string name="detail_director">Regisseur</string>
+</resources>

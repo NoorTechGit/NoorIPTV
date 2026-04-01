@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="10dp"
+    android:layout_marginBottom="4dp"
+    android:focusable="true"
+                android:focusableInTouchMode="true"    android:clickable="true">
+
+    <!-- Check indicator -->
+    <TextView
+        android:id="@+id/tv_track_check"
+        android:layout_width="24dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/accent"
+        android:textSize="16sp"
+        android:gravity="center" />
+
+    <!-- Track name -->
+    <TextView
+        android:id="@+id/tv_track_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="#E8EAF0"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif"
+        android:paddingStart="8dp" />
+
+    <!-- Track info (codec, channels) -->
+    <TextView
+        android:id="@+id/tv_track_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#7A8BA0"
+        android:textSize="11sp"
+        android:fontFamily="sans-serif" />
+</LinearLayout>

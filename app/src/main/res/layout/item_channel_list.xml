@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:focusable="true"
+                android:focusableInTouchMode="true"    android:clickable="true"
+    android:background="@android:color/transparent">
+
+    <!-- Channel number -->
+    <TextView
+        android:id="@+id/tv_number"
+        android:layout_width="30dp"
+        android:layout_height="wrap_content"
+        android:textColor="#4E4E53"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif"
+        android:gravity="end" />
+
+    <!-- Playing indicator -->
+    <TextView
+        android:id="@+id/tv_playing"
+        android:layout_width="16dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/accent"
+        android:textSize="10sp"
+        android:gravity="center"
+        android:layout_marginStart="2dp" />
+
+    <!-- Channel logo -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="40dp"
+        android:layout_height="28dp"
+        android:scaleType="fitCenter"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="10dp" />
+
+    <!-- Channel name -->
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:textColor="#D0D0D5"
+        android:textSize="13sp"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Separator -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="28dp"
+        android:background="#0A1628"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" />
+
+    <!-- EPG: current program -->
+    <TextView
+        android:id="@+id/tv_epg"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="4"
+        android:textColor="#506880"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/no_program_info" />
+</LinearLayout>

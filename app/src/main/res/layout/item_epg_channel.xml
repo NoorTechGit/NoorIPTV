@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    EPG sidebar channel row item
+    200dp wide, 64dp tall — Apple TV style: logo + name
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#0A0A0A"
+    android:focusable="true"
+                android:focusableInTouchMode="true"    android:clickable="true">
+
+    <!-- Channel logo: 40x40, rounded appearance via padding + scaleType -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="fitCenter"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="10dp"
+        android:background="#1C1C1E"
+        android:padding="4dp" />
+
+    <!-- Channel name: white, 14sp, single line with ellipsis -->
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Channel number (hidden, kept for adapter compatibility) -->
+    <TextView
+        android:id="@+id/tv_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#0A84FF"
+        android:textSize="10sp"
+        android:fontFamily="sans-serif"
+        android:visibility="gone" />
+
+</LinearLayout>
