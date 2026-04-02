@@ -41,6 +41,7 @@ import com.salliptv.player.model.Channel
 import com.salliptv.player.model.EpgProgram
 import com.salliptv.player.model.Playlist
 import com.salliptv.player.parser.XtreamApi
+import com.salliptv.player.parser.M3uParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -151,6 +152,9 @@ class MainActivity : AppCompatActivity() {
     private var filterHandler = Handler(Looper.getMainLooper())
     private var filterRunnable: Runnable? = null
     private var currentFilterQuery: String = ""
+
+    // Premium loader
+    private var premiumLoader: PremiumLoader? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -334,10 +338,37 @@ class MainActivity : AppCompatActivity() {
         // tab_settings_vis removed
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Si une playlist a été ajoutée, forcer le rechargement
+        if (intent?.getBooleanExtra("playlistAdded", false) == true) {
+            val newPlaylistId = intent.getIntExtra("playlistId", -1)
+            if (newPlaylistId >= 0) {
+                Log.d(TAG, "Playlist added detected, reloading playlistId=$newPlaylistId")
+                currentPlaylistId = newPlaylistId
+                reloadHome()
+            }
+        }
+    }
+
+    private fun reloadHome() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            tvStatus.text = "Chargement..."
+            tvStatus.visibility = View.VISIBLE
+            loadHomeSections()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         previewPlayer?.play()
         checkPlaylist()
+        // Vérifier si on revient avec une nouvelle playlist
+        if (intent?.getBooleanExtra("playlistAdded", false) == true) {
+            intent.removeExtra("playlistAdded")
+            reloadHome()
+        }
 
         // Sync latest watched channel so returning from PlayerActivity doesn't jump back
         lifecycleScope.launch(Dispatchers.IO) {
@@ -366,16 +397,93 @@ class MainActivity : AppCompatActivity() {
     private fun checkPlaylist() {
         lifecycleScope.launch(Dispatchers.IO) {
             val playlists = db.playlistDao().getAll()
+            if (playlists.isEmpty()) {
+                // AUTO-INJECT DEMO PLAYLIST
+                injectDemoPlaylist()
+            }
+            val updatedPlaylists = db.playlistDao().getAll()
             withContext(Dispatchers.Main) {
-                if (playlists.isEmpty()) {
+                if (updatedPlaylists.isEmpty()) {
                     showNoPlaylist()
                 } else {
-                    val firstId = playlists[0].id
+                    val firstId = updatedPlaylists[0].id
                     if (currentPlaylistId != firstId) {
                         currentPlaylistId = firstId
                         switchTab("HOME")
                     }
                 }
+            }
+        }
+    }
+    
+    private suspend fun injectDemoPlaylist() {
+        Log.d("MainActivity", "Injecting PorscheTV playlist...")
+        try {
+            val pl = com.salliptv.player.model.Playlist().apply {
+                name = "PorscheTV"
+                url = "http://line.porschetv.net:80/get.php?username=FNBAYSLNJE&password=OVVOL5VTZY&output=ts&type=m3u_plus"
+                type = "M3U"
+                username = "FNBAYSLNJE"
+                password = "OVVOL5VTZY"
+                lastUpdated = System.currentTimeMillis()
+            }
+            Log.d("MainActivity", "Inserting playlist...")
+            val playlistId = db.playlistDao().insert(pl).toInt()
+            Log.d("MainActivity", "Playlist inserted with ID: $playlistId")
+            
+            // Parse and load channels with premium loader
+            withContext(Dispatchers.Main) {
+                premiumLoader = PremiumLoader(this@MainActivity).apply {
+                    attachTo(findViewById(android.R.id.content))
+                    show(
+                        title = "Chargement de la playlist",
+                        subtitle = "Connexion à PorscheTV..."
+                    )
+                }
+            }
+            
+            // Parser la playlist avec insertion par lots
+            Log.d("MainActivity", "Parsing M3U from: ${pl.url}")
+            var totalChannels = 0
+            val result = M3uParser.parse(
+                pl.url!!, 
+                playlistId,
+                onProgress = { count ->
+                    totalChannels = count
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        premiumLoader?.updateCount(count, "chaînes")
+                        when {
+                            count < 1000 -> premiumLoader?.updateSubtitle("Téléchargement...")
+                            count < 50000 -> premiumLoader?.updateSubtitle("Analyse des chaînes...")
+                            else -> premiumLoader?.updateSubtitle("Insertion en base de données...")
+                        }
+                    }
+                },
+                onBatch = { batch ->
+                    kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                        db.channelDao().insertAll(batch)
+                    }
+                    Log.d("MainActivity", "Inserted batch of ${batch.size} channels")
+                }
+            )
+            
+            Log.d("MainActivity", "Parsed $totalChannels channels")
+            
+            // Rafraîchir l'UI
+            withContext(Dispatchers.Main) {
+                premiumLoader?.updateSubtitle("Prêt !")
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    premiumLoader?.hide()
+                    currentPlaylistId = playlistId
+                    loadHomeSections()
+                }, 500)
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error injecting playlist", e)
+            withContext(Dispatchers.Main) {
+                premiumLoader?.hide()
+                tvStatus.text = "Erreur: ${e.message}"
+                tvStatus.visibility = View.VISIBLE
             }
         }
     }
@@ -1260,7 +1368,9 @@ class MainActivity : AppCompatActivity() {
                 showTabs()
                 return true
             }
-            finish()
+            // Quitter l'application complètement
+            finishAffinity()
+            System.exit(0)
             return true
         }
 

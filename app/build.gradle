@@ -45,6 +45,30 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+            
+            // Sécurité: pas de debug info en release
+            debuggable false
+            jniDebuggable false
+        }
+        debug {
+            // Sécurité: même en debug, pas de debug info JNI
+            jniDebuggable false
+        }
+    }
+    
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+    
+    defaultConfig {
+        externalNativeBuild {
+            cmake {
+                cppFlags "-O3 -fvisibility=hidden -fno-stack-protector -fPIC"
+                arguments "-DANDROID_STL=c++_static"
+            }
         }
     }
 

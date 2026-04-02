@@ -8,7 +8,11 @@ import com.salliptv.player.model.Category
 import com.salliptv.player.model.Channel
 import com.salliptv.player.model.Playlist
 
-@Database(entities = [Playlist::class, Channel::class, Category::class], version = 2, exportSchema = false)
+@Database(
+    entities = [Playlist::class, Channel::class, Category::class], 
+    version = 4, // INCREMENTÉ pour migration (hidden field)
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun playlistDao(): PlaylistDao
@@ -25,7 +29,14 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "salliptv.db"
-                ).fallbackToDestructiveMigration().build().also { instance = it }
+                )
+                .addMigrations(
+                    DatabaseMigrations.MIGRATION_2_3,
+                    DatabaseMigrations.MIGRATION_3_4
+                )
+                // En développement, on peut utiliser destructive migration
+                // .fallbackToDestructiveMigration()
+                .build().also { instance = it }
             }
     }
 }

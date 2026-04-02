@@ -8,6 +8,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonToken
+import com.salliptv.player.model.CleanedChannelData
 import com.salliptv.player.model.Category
 import com.salliptv.player.model.Channel
 import com.salliptv.player.model.EpgProgram
@@ -206,7 +207,24 @@ class XtreamApi(
                         val ch = Channel()
                         ch.playlistId = playlistId
                         ch.type = type
-                        ch.name = getStr(obj, "name")
+                        
+                        // Récupérer le nom brut
+                        val rawName = getStr(obj, "name") ?: "Unknown"
+                        ch.name = rawName
+                        
+                        // ============================================================================
+                        // NOUVEAU: Nettoyage intelligent du nom de chaîne
+                        // ============================================================================
+                        val cleanedData: CleanedChannelData = ChannelNameCleaner.clean(rawName)
+                        
+                        ch.cleanName = cleanedData.cleanName
+                        ch.qualityBadge = cleanedData.qualityBadge
+                        ch.countryPrefix = cleanedData.countryPrefix
+                        ch.codecInfo = cleanedData.codecInfo
+                        ch.groupId = cleanedData.groupKey
+
+                        Log.v(TAG, "Cleaned Xtream: '$rawName' -> '${ch.cleanName}' [${ch.qualityBadge ?: "SD"}]")
+                        
                         ch.logoUrl = getStr(obj, "stream_icon")
                         if (ch.logoUrl.isNullOrEmpty() && obj.has("cover")) {
                             ch.logoUrl = getStr(obj, "cover")
@@ -245,8 +263,48 @@ class XtreamApi(
             }
         }
 
-        Log.i(TAG, "Got ${channels.size} $type streams")
-        channels
+        // NOUVEAU: Post-traitement pour regrouper les versions multiples
+        val processedChannels = postProcessChannels(channels)
+        
+        Log.i(TAG, "Got ${processedChannels.size} $type streams (${channels.size - processedChannels.size} doublons regroupés)")
+        processedChannels
+    }
+
+    /**
+     * NOUVEAU: Post-traitement pour regrouper les chaînes par groupe
+     */
+    private fun postProcessChannels(channels: List<Channel>): List<Channel> {
+        // Groupement temporaire pour détecter les versions multiples
+        val grouped = channels.groupBy { it.groupId ?: it.cleanName ?: it.name ?: "" }
+        
+        val result = mutableListOf<Channel>()
+        
+        grouped.forEach { (groupKey, versions) ->
+            if (versions.size == 1) {
+                // Une seule version
+                val ch = versions[0]
+                ch.groupId = groupKey
+                result.add(ch)
+            } else {
+                // Plusieurs versions (SD, HD, FHD, 4K...)
+                val sortedVersions = versions.sortedWith { c1, c2 ->
+                    ChannelNameCleaner.compareQuality(
+                        CleanedChannelData(c1.name ?: "", c1.cleanName ?: "", c1.qualityBadge, null, null, ""),
+                        CleanedChannelData(c2.name ?: "", c2.cleanName ?: "", c2.qualityBadge, null, null, "")
+                    )
+                }.reversed()
+
+                sortedVersions.forEachIndexed { index, ch ->
+                    ch.groupId = groupKey
+                }
+
+                result.addAll(sortedVersions)
+                
+                Log.d(TAG, "Groupe Xtream '$groupKey': ${versions.size} versions")
+            }
+        }
+
+        return result
     }
 
     // ==========================================

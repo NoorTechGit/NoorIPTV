@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Premium Apple-style loader
+    - Glassmorphism background with blur
+    - Animated pulsing dots
+    - Smooth progress indicator
+    - Typography: SF Pro Display style (sans-serif)
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/premium_loader_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#CC000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <!-- Glassmorphism card -->
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="40dp"
+        android:background="@drawable/bg_glass_card">
+
+        <!-- Animated dots container -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="24dp">
+
+            <View
+                android:id="@+id/dot1"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_loader_dot" />
+
+            <View
+                android:id="@+id/dot2"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_loader_dot" />
+
+            <View
+                android:id="@+id/dot3"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_loader_dot" />
+
+            <View
+                android:id="@+id/dot4"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_loader_dot" />
+        </LinearLayout>
+
+        <!-- Status text -->
+        <TextView
+            android:id="@+id/loader_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chargement"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-light"
+            android:letterSpacing="0.02"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Progress detail -->
+        <TextView
+            android:id="@+id/loader_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Préparation..."
+            android:textColor="#8E8E93"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Progress bar (premium style) -->
+        <ProgressBar
+            android:id="@+id/loader_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="240dp"
+            android:layout_height="3dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#0A84FF"
+            android:background="#2C2C2E"
+            android:visibility="gone" />
+
+        <!-- Channel count with animation -->
+        <TextView
+            android:id="@+id/loader_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 chaînes"
+            android:textColor="#0A84FF"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</FrameLayout>

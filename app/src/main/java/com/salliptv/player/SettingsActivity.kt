@@ -301,8 +301,10 @@ class SettingsActivity : AppCompatActivity() {
     // ==========================================
 
     private fun startPolling() {
+        Log.d(TAG, "startPolling called, deviceId=$deviceId, pollJob active=${pollJob?.isActive}")
         if (pollJob?.isActive == true) return
         pollJob = lifecycleScope.launch {
+            Log.d(TAG, "Polling started")
             while (isActive) {
                 syncFromWeb()
                 delay(POLL_INTERVAL_MS)
@@ -411,6 +413,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun handleSessionPlaylist(data: JsonObject) {
         lifecycleScope.launch {
+            Log.d(TAG, "handleSessionPlaylist: received playlist data from web/mobile")
             val existing = withContext(Dispatchers.IO) { db.playlistDao().getAll() }
 
             if (!premiumManager.isPremium() && existing.isNotEmpty()) {
@@ -423,13 +426,13 @@ class SettingsActivity : AppCompatActivity() {
                 lastUpdated = System.currentTimeMillis()
                 if ("xtream" == type) {
                     this.type = "XTREAM"
-                    name = "Xtream"
+                    name = data.get("name")?.asString ?: "Xtream"
                     url = data.get("server").asString
                     username = data.get("username").asString
                     password = data.get("password").asString
                 } else {
                     this.type = "M3U"
-                    name = "M3U Playlist"
+                    name = data.get("name")?.asString ?: "M3U Playlist"
                     url = data.get("url").asString
                 }
             }
@@ -445,6 +448,11 @@ class SettingsActivity : AppCompatActivity() {
             val playlistId = withContext(Dispatchers.IO) {
                 db.playlistDao().insert(pl).toInt()
             }
+            Log.d(TAG, "Playlist inserted from web with ID: $playlistId")
+            
+            // Rafraîchir la liste affichée dans SettingsActivity
+            loadSavedPlaylists()
+            
             binding.tvSyncStatus.text = getString(R.string.playlist_synced, pl.name)
             showLoading(getString(R.string.loading))
 
@@ -502,13 +510,19 @@ class SettingsActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val result = M3uParser.parse(url, 0) { count ->
-                        runOnUiThread { binding.tvStatus.text = "${getString(R.string.loading)} $count" }
-                    }
+                    var testCount = 0
+                    val result = M3uParser.parse(
+                        url, 
+                        0,
+                        onProgress = { count ->
+                            testCount = count
+                            runOnUiThread { binding.tvStatus.text = "${getString(R.string.loading)} $count" }
+                        }
+                    )
                     if (!result.epgUrl.isNullOrEmpty() && binding.etEpgUrl.text.isEmpty()) {
                         binding.etEpgUrl.setText(result.epgUrl)
                     }
-                    setStatus(getString(R.string.test_success, result.channels.size))
+                    setStatus(getString(R.string.test_success, testCount))
                 } catch (e: Exception) {
                     setStatus(getString(R.string.test_failed, e.message))
                 } finally {
@@ -628,14 +642,24 @@ class SettingsActivity : AppCompatActivity() {
     private suspend fun loadM3uChannels(pl: Playlist, playlistId: Int) {
         showLoading(getString(R.string.loading_connecting))
         try {
-            val result = M3uParser.parse(pl.url ?: "", playlistId) { count ->
-                runOnUiThread { showLoading(String.format(getString(R.string.loading_channels), count)) }
-            }
-            val channels = result.channels
+            val allChannels = mutableListOf<Channel>()
+            val result = M3uParser.parse(
+                pl.url ?: "", 
+                playlistId,
+                onProgress = { count ->
+                    runOnUiThread { showLoading(String.format(getString(R.string.loading_channels), count)) }
+                },
+                onBatch = { batch ->
+                    allChannels.addAll(batch)
+                    // Insérer par lots pour libérer la mémoire
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        db.channelDao().insertAll(batch)
+                    }
+                }
+            )
+            val channels = allChannels.toList()
             showLoading(getString(R.string.loading_detecting))
             withContext(Dispatchers.IO) { CountryDetector.detectPrefixes(channels) }
-            showLoading(String.format(getString(R.string.loading_saving), channels.size))
-            withContext(Dispatchers.IO) { db.channelDao().insertAll(channels) }
             setStatus("${getString(R.string.saved)} (${channels.size} channels)")
             binding.btnSave.isEnabled = true
             openFilter(playlistId)
@@ -647,7 +671,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun openFilter(playlistId: Int) {
         if (!premiumManager.isPremium()) {
-            Toast.makeText(this, getString(R.string.feature_locked), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.playlist_added_restart), Toast.LENGTH_SHORT).show()
+            // Redémarrer MainActivity pour charger la nouvelle playlist
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra("playlistAdded", true)
+                putExtra("playlistId", playlistId)
+            }
+            startActivity(intent)
             finish()
             return
         }
@@ -673,7 +704,8 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
         if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-            finish()
+            finishAffinity()
+            System.exit(0)
             return true
         }
         return super.onKeyDown(keyCode, event)

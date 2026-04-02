@@ -57,7 +57,7 @@
         android:background="#1A1A1A"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <ImageView
             android:layout_width="18dp"

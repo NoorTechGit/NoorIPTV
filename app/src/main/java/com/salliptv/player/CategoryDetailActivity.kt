@@ -209,7 +209,7 @@ class CategoryDetailActivity : AppCompatActivity() {
         } else {
             val q = query.lowercase(Locale.getDefault())
             channelAdapter.setChannels(allChannels.filter { ch ->
-                ch.name.lowercase(Locale.getDefault()).contains(q) ||
+                (ch.name?.lowercase(Locale.getDefault())?.contains(q) == true) ||
                 (ch.groupTitle?.lowercase(Locale.getDefault())?.contains(q) == true)
             })
         }

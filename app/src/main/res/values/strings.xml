@@ -36,6 +36,7 @@
     <string name="test_success">Connection successful! (%d channels)</string>
     <string name="test_failed">Connection failed: %s</string>
     <string name="saved">Playlist saved</string>
+    <string name="playlist_added_restart">Playlist added — Restarting…</string>
     <string name="epg_url">EPG URL (optional)</string>
 
     <!-- Player -->

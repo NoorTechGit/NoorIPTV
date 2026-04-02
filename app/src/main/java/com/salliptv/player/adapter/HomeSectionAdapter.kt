@@ -53,7 +53,7 @@ class HomeSectionAdapter(
             sections = originalSections.mapNotNull { section ->
                 val titleMatch = section.title.lowercase().contains(q)
                 val filteredChannels = section.channels.filter { ch ->
-                    ch.name.lowercase().contains(q) ||
+                    (ch.name?.lowercase()?.contains(q) == true) ||
                     (ch.groupTitle?.lowercase()?.contains(q) == true)
                 }
                 if (titleMatch) {
