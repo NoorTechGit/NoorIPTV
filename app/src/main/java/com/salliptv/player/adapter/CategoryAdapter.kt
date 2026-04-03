@@ -63,17 +63,10 @@ class CategoryAdapter(
             v.animate()
                 .scaleX(if (hasFocus) 1.06f else 1f)
                 .scaleY(if (hasFocus) 1.06f else 1f)
-                .setDuration(if (hasFocus) 250L else 200L)
-                .setInterpolator(DecelerateInterpolator(1.5f))
+                .translationZ(if (hasFocus) 6f else 0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
                 .start()
-
-            if (hasFocus) {
-                v.setBackgroundResource(R.drawable.bg_channel_row_focused)
-                holder.tvName.setTextColor(Color.WHITE)
-                holder.tvCount.setTextColor(0xAAFFFFFF.toInt())
-            } else {
-                applySelectionState(holder, isSelected)
-            }
         }
 
         holder.itemView.setOnClickListener {

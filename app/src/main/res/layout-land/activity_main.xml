@@ -300,6 +300,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal"
+            android:clipChildren="false"
             android:visibility="gone">
 
             <!-- Categories sidebar -->
@@ -311,6 +312,7 @@
                 android:background="#0D0D0D"
                 android:paddingTop="8dp"
                 android:paddingBottom="16dp"
+                android:clipChildren="false"
                 android:clipToPadding="false" />
 
             <View
@@ -327,6 +329,7 @@
                 android:layout_weight="1"
                 android:paddingTop="8dp"
                 android:paddingBottom="16dp"
+                android:clipChildren="false"
                 android:clipToPadding="false" />
         </LinearLayout>
 

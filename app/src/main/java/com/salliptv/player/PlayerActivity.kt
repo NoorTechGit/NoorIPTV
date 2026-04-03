@@ -358,13 +358,13 @@ class PlayerActivity : AppCompatActivity() {
         val buttons = arrayOf<View>(btnTvGuide, btnSearch, btnChannels, btnAudio, btnSubtitles)
         for (btn in buttons) {
             btn.setOnFocusChangeListener { v, hasFocus ->
-                if (hasFocus) {
-                    v.setBackgroundResource(R.drawable.bg_action_focused)
-                    v.animate().scaleX(1.1f).scaleY(1.1f).setDuration(150).start()
-                } else {
-                    v.setBackgroundColor(Color.TRANSPARENT)
-                    v.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
-                }
+                v.animate()
+                    .scaleX(if (hasFocus) 1.06f else 1f)
+                    .scaleY(if (hasFocus) 1.06f else 1f)
+                    .translationZ(if (hasFocus) 8f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
         }
 
@@ -378,7 +378,7 @@ class PlayerActivity : AppCompatActivity() {
         tvQualitySelector?.setOnClickListener { showQualityDialog() }
         tvQualitySelector?.setOnFocusChangeListener { v, hasFocus ->
             if (hasFocus) {
-                v.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start()
+                v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(150).start()
             } else {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
             }
@@ -754,14 +754,52 @@ class PlayerActivity : AppCompatActivity() {
 
         // Load recent channels for the strip (exclude current)
         lifecycleScope.launch(Dispatchers.IO) {
-            val recent = db.channelDao().getRecent(playlistId).filter { it.id != currentChannelId }
+            val recent = db.channelDao().getRecent(playlistId).filter { it.id != currentChannelId }.take(8)
             withContext(Dispatchers.Main) {
-                if (recent.isNotEmpty()) {
-                    channelStripAdapter.setChannels(recent, -1)
-                    rvChannelStrip.visibility = View.VISIBLE
-                    rvChannelStrip.scrollToPosition(0)
+                val strip = findViewById<android.widget.LinearLayout?>(R.id.strip_recent)
+                val sep = findViewById<View?>(R.id.strip_separator)
+                if (strip != null && recent.isNotEmpty()) {
+                    strip.removeAllViews()
+                    for (ch in recent) {
+                        val iv = ImageView(this@PlayerActivity).apply {
+                            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
+                                marginStart = 4; marginEnd = 4
+                            }
+                            scaleType = ImageView.ScaleType.FIT_CENTER
+                            setPadding(6, 6, 6, 6)
+                            isFocusable = true
+                            isFocusableInTouchMode = true
+                            isClickable = true
+                            setOnClickListener {
+                                val idx = channelList.indexOfFirst { c -> c.id == ch.id }
+                                if (idx >= 0) { hideFullOverlay(); switchToChannel(idx) }
+                            }
+                            setOnFocusChangeListener { v, hasFocus ->
+                                v.animate()
+                                    .scaleX(if (hasFocus) 1.25f else 1f)
+                                    .scaleY(if (hasFocus) 1.25f else 1f)
+                                    .alpha(if (hasFocus) 1f else 0.7f)
+                                    .setDuration(150)
+                                    .setInterpolator(DecelerateInterpolator())
+                                    .start()
+                            }
+                            alpha = 0.7f
+                            // Rounded dark background to mask ugly logo backgrounds
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                setColor(0xFF1C1C1E.toInt())
+                                cornerRadius = 10f * context.resources.displayMetrics.density
+                            }
+                        }
+                        if (!ch.logoUrl.isNullOrEmpty()) {
+                            Glide.with(this@PlayerActivity).load(ch.logoUrl).centerInside().into(iv)
+                        }
+                        strip.addView(iv)
+                    }
+                    strip.visibility = View.VISIBLE
+                    sep?.visibility = View.VISIBLE
                 } else {
-                    rvChannelStrip.visibility = View.GONE
+                    strip?.visibility = View.GONE
+                    sep?.visibility = View.GONE
                 }
             }
         }
@@ -995,8 +1033,8 @@ class PlayerActivity : AppCompatActivity() {
         val vodControls = arrayOf(btnVodRewind, btnVodPlayPause, btnVodForward, btnVodAudio, btnVodSubs)
         for (ctrl in vodControls) {
             ctrl?.setOnFocusChangeListener { v, hasFocus ->
-                v.animate().scaleX(if (hasFocus) 1.15f else 1f)
-                    .scaleY(if (hasFocus) 1.15f else 1f)
+                v.animate().scaleX(if (hasFocus) 1.08f else 1f)
+                    .scaleY(if (hasFocus) 1.08f else 1f)
                     .setDuration(150).start()
             }
         }
@@ -1478,11 +1516,13 @@ class PlayerActivity : AppCompatActivity() {
                     }
                 }
                 setOnFocusChangeListener { v, hasFocus ->
-                    if (!isCurrent) {
-                        v.setBackgroundColor(if (hasFocus) 0x66FFFFFF.toInt() else 0x33FFFFFF.toInt())
-                    }
-                    v.scaleX = if (hasFocus) 1.1f else 1f
-                    v.scaleY = if (hasFocus) 1.1f else 1f
+                    v.animate()
+                        .scaleX(if (hasFocus) 1.06f else 1f)
+                        .scaleY(if (hasFocus) 1.06f else 1f)
+                        .translationZ(if (hasFocus) 8f else 0f)
+                        .setDuration(200)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
                 }
             }
             container.addView(pill)
@@ -1806,11 +1846,13 @@ class PlayerActivity : AppCompatActivity() {
             if (!ti.selected) h.itemView.setBackgroundColor(Color.TRANSPARENT)
 
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
-                if (hasFocus) {
-                    v.setBackgroundResource(R.drawable.bg_action_focused)
-                } else {
-                    if (ti.selected) v.setBackgroundColor(0x330A84FF) else v.setBackgroundColor(Color.TRANSPARENT)
-                }
+                v.animate()
+                    .scaleX(if (hasFocus) 1.06f else 1f)
+                    .scaleY(if (hasFocus) 1.06f else 1f)
+                    .translationZ(if (hasFocus) 8f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
 
             h.itemView.setOnClickListener { selectTrack(ti, trackType) }
@@ -1841,6 +1883,11 @@ class PlayerActivity : AppCompatActivity() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
             val v = LayoutInflater.from(parent.context).inflate(R.layout.item_channel_strip, parent, false)
+            // Fill width evenly: each item gets equal share
+            val itemCount = items.size.coerceAtLeast(1)
+            val totalPadding = (56 * parent.context.resources.displayMetrics.density).toInt() // paddingStart + paddingEnd
+            val itemWidth = (parent.width - totalPadding) / itemCount
+            v.layoutParams = RecyclerView.LayoutParams(itemWidth.coerceAtLeast(60), RecyclerView.LayoutParams.MATCH_PARENT)
             return VH(v)
         }
 
@@ -1865,18 +1912,26 @@ class PlayerActivity : AppCompatActivity() {
             )
 
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
+                v.animate()
+                    .scaleX(if (hasFocus) 1.08f else 1f)
+                    .scaleY(if (hasFocus) 1.08f else 1f)
+                    .translationZ(if (hasFocus) 10f else 0f)
+                    .setDuration(180)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
                 if (hasFocus) {
-                    v.setBackgroundResource(R.drawable.bg_strip_item_focused)
-                    v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(150)
-                        .setInterpolator(DecelerateInterpolator()).start()
+                    v.foreground = android.graphics.drawable.GradientDrawable().apply {
+                        setStroke(3, 0xAAFFFFFF.toInt())
+                        cornerRadius = 10f * v.context.resources.displayMetrics.density
+                        setColor(0x15FFFFFF)
+                    }
                     hideOverlayJob?.cancel()
                     hideOverlayJob = lifecycleScope.launch {
                         delay(OVERLAY_TIMEOUT)
                         hideFullOverlay()
                     }
                 } else {
-                    v.setBackgroundResource(if (isPlaying) R.drawable.bg_strip_item_playing else android.R.color.transparent)
-                    v.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
+                    v.foreground = null
                 }
             }
 
@@ -1942,13 +1997,13 @@ class PlayerActivity : AppCompatActivity() {
             h.tvNum.setTextColor(if (isPlaying) 0xFF40D4FF.toInt() else 0xFF8E8E93.toInt())
 
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
-                v.setBackgroundColor(
-                    when {
-                        hasFocus -> 0x330A84FF
-                        isPlaying -> 0x400A84FF
-                        else -> Color.TRANSPARENT
-                    }
-                )
+                v.animate()
+                    .scaleX(if (hasFocus) 1.05f else 1f)
+                    .scaleY(if (hasFocus) 1.05f else 1f)
+                    .translationZ(if (hasFocus) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
             h.itemView.setOnClickListener { onOverlayChannelSelected(position) }
         }

@@ -53,12 +53,13 @@ class FilterActivity : AppCompatActivity() {
     }
 
     private fun setupButtonFocus(btn: TextView, normalColor: Int, focusColor: Int) {
-        btn.setOnFocusChangeListener { _, hasFocus ->
-            btn.setBackgroundColor(if (hasFocus) focusColor else normalColor)
-            btn.animate()
-                .scaleX(if (hasFocus) 1.05f else 1.0f)
-                .scaleY(if (hasFocus) 1.05f else 1.0f)
-                .setDuration(100)
+        btn.setOnFocusChangeListener { v, hasFocus ->
+            v.animate()
+                .scaleX(if (hasFocus) 1.06f else 1f)
+                .scaleY(if (hasFocus) 1.06f else 1f)
+                .translationZ(if (hasFocus) 8f else 0f)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         }
     }
@@ -281,7 +282,13 @@ class FilterActivity : AppCompatActivity() {
                 }
 
                 ch.itemView.setOnFocusChangeListener { v, hasFocus ->
-                    v.setBackgroundColor(if (hasFocus) 0x1A0A84FF else 0x00000000)
+                    v.animate()
+                        .scaleX(if (hasFocus) 1.05f else 1f)
+                        .scaleY(if (hasFocus) 1.05f else 1f)
+                        .translationZ(if (hasFocus) 6f else 0f)
+                        .setDuration(200)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
                 }
 
             } else {
@@ -301,7 +308,13 @@ class FilterActivity : AppCompatActivity() {
                 }
 
                 gh.itemView.setOnFocusChangeListener { v, hasFocus ->
-                    v.setBackgroundColor(if (hasFocus) 0x110A84FF else 0x00000000)
+                    v.animate()
+                        .scaleX(if (hasFocus) 1.05f else 1f)
+                        .scaleY(if (hasFocus) 1.05f else 1f)
+                        .translationZ(if (hasFocus) 6f else 0f)
+                        .setDuration(200)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
                 }
             }
         }

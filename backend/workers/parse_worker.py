@@ -447,8 +447,9 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
         logger.info(f"Done: {result['total_channels']} live, {result['total_vod']} vod, {result['total_series']} series")
 
         # Kick off background TMDB enrichment (non-blocking)
-        vod_names = [ch.get("name", "") for ch in parsed["vod"][:5000]]  # Cap at 5K for first batch
-        series_names = [ch.get("name", "") for ch in parsed["series"][:5000]]
+        # Send unique names (first 20K each) for background TMDB enrichment
+        vod_names = list(set(ch.get("name", "") for ch in parsed["vod"] if ch.get("name")))[:20000]
+        series_names = list(set(ch.get("name", "") for ch in parsed["series"] if ch.get("name")))[:20000]
         enrich_tmdb_background.delay(vod_names, series_names)
 
         self.update_state(state='COMPLETED', meta={'progress': 100, 'result': result})

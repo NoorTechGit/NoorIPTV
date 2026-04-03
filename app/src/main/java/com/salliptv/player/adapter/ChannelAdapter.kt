@@ -1,7 +1,6 @@
 package com.salliptv.player.adapter
 
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -193,21 +192,11 @@ class ChannelAdapter(
             v.animate()
                 .scaleX(if (hasFocus) 1.05f else 1f)
                 .scaleY(if (hasFocus) 1.05f else 1f)
-                .setDuration(if (hasFocus) 200L else 150L)
+                .translationZ(if (hasFocus) 6f else 0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
                 .start()
-
-            if (hasFocus) {
-                v.setBackgroundResource(R.drawable.bg_channel_row_focused)
-                holder.tvName.setTextColor(Color.WHITE)
-                holder.tvNumber?.setTextColor(0xFF0A84FF.toInt())
-                holder.tvEpg?.setTextColor(0xFFFFFFFF.toInt())
-                onItemFocus(channel, position)
-            } else {
-                v.setBackgroundColor(if (isSelected) 0x20FFFFFF else Color.TRANSPARENT)
-                holder.tvName.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
-                holder.tvNumber?.setTextColor(if (isSelected) 0xFF0A84FF.toInt() else 0xFF8E8E93.toInt())
-                holder.tvEpg?.setTextColor(if (isSelected) 0xAAFFFFFF.toInt() else 0xFF8E8E93.toInt())
-            }
+            if (hasFocus) onItemFocus(channel, position)
         }
     }
 
@@ -228,26 +217,24 @@ class ChannelAdapter(
         }
 
         holder.itemView.setOnFocusChangeListener { v, hasFocus ->
-            val scale = if (hasFocus) 1.06f else 1.0f
             v.animate()
-                .scaleX(scale).scaleY(scale)
-                .translationZ(if (hasFocus) 20f else 2f)
-                .setDuration(if (hasFocus) 200L else 150L)
-                .setInterpolator(DecelerateInterpolator(1.5f))
+                .scaleX(if (hasFocus) 1.06f else 1f)
+                .scaleY(if (hasFocus) 1.06f else 1f)
+                .translationZ(if (hasFocus) 8f else 0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
                 .start()
-
+            card.cardElevation = if (hasFocus) 16f else 2f
             if (hasFocus) {
-                card.cardElevation = 16f
-                card.foreground = GradientDrawable().apply {
-                    cornerRadius = card.radius
-                    setStroke(3, 0xFFFFFFFF.toInt())
-                    setColor(Color.TRANSPARENT)
+                card.foreground = android.graphics.drawable.GradientDrawable().apply {
+                    setStroke(3, 0xAAFFFFFF.toInt())
+                    cornerRadius = 12f * v.context.resources.displayMetrics.density
+                    setColor(0x10FFFFFF)
                 }
-                onItemFocus(channel, position)
             } else {
-                card.cardElevation = 2f
                 card.foreground = null
             }
+            if (hasFocus) onItemFocus(channel, position)
         }
     }
 
@@ -258,28 +245,24 @@ class ChannelAdapter(
         card.foreground = null
 
         holder.itemView.setOnFocusChangeListener { v, hasFocus ->
-            val scale = if (hasFocus) 1.08f else 1.0f
             v.animate()
-                .scaleX(scale).scaleY(scale)
-                .translationZ(if (hasFocus) 16f else 0f)
-                .setDuration(if (hasFocus) 250L else 200L)
-                .setInterpolator(DecelerateInterpolator(1.5f))
+                .scaleX(if (hasFocus) 1.06f else 1f)
+                .scaleY(if (hasFocus) 1.06f else 1f)
+                .translationZ(if (hasFocus) 8f else 0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
                 .start()
-
+            card.cardElevation = if (hasFocus) 12f else 0f
             if (hasFocus) {
-                card.setCardBackgroundColor(0xFF2C2C2E.toInt())
-                card.cardElevation = 12f
-                card.foreground = GradientDrawable().apply {
-                    cornerRadius = card.radius
-                    setStroke(4, 0xFFFFFFFF.toInt())
-                    setColor(Color.TRANSPARENT)
+                card.foreground = android.graphics.drawable.GradientDrawable().apply {
+                    setStroke(3, 0xAAFFFFFF.toInt())
+                    cornerRadius = 12f * v.context.resources.displayMetrics.density
+                    setColor(0x10FFFFFF)
                 }
-                onItemFocus(channel, position)
             } else {
-                card.setCardBackgroundColor(0xFF1C1C1E.toInt())
-                card.cardElevation = 0f
                 card.foreground = null
             }
+            if (hasFocus) onItemFocus(channel, position)
         }
     }
 

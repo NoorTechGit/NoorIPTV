@@ -206,7 +206,13 @@ class EpgActivity : AppCompatActivity() {
             }
 
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
-                v.setBackgroundColor(if (hasFocus) 0x200A84FF else Color.TRANSPARENT)
+                v.animate()
+                    .scaleX(if (hasFocus) 1.05f else 1f)
+                    .scaleY(if (hasFocus) 1.05f else 1f)
+                    .translationZ(if (hasFocus) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
                 if (hasFocus) showProgramInfo(ch, null, null)
             }
 

@@ -1,7 +1,5 @@
 package com.salliptv.player.adapter
 
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -60,17 +58,13 @@ class HomeCardAdapter(
                 onItemClick(Channel(id = HomeSectionAdapter.SEE_ALL_ID))
             }
             view.setOnFocusChangeListener { v, hasFocus ->
-                val scale = if (hasFocus) 1.1f else 1f
-                v.animate().scaleX(scale).scaleY(scale)
-                    .translationZ(if (hasFocus) 12f else 0f)
-                    .setDuration(200).start()
-                val tv = v.findViewById<TextView?>(R.id.tv_see_all)
-                tv?.setTextColor(if (hasFocus) FOCUS_BORDER_COLOR else Color.WHITE)
-                tv?.setBackgroundColor(if (hasFocus) 0xFF333333.toInt() else Color.TRANSPARENT)
-                if (v is androidx.cardview.widget.CardView) {
-                    v.cardElevation = if (hasFocus) 12f else 0f
-                    v.setCardBackgroundColor(if (hasFocus) 0xFF333333.toInt() else 0xFF1C1C1E.toInt())
-                }
+                v.animate()
+                    .scaleX(if (hasFocus) 1.06f else 1f)
+                    .scaleY(if (hasFocus) 1.06f else 1f)
+                    .translationZ(if (hasFocus) 8f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
             return holder
         }
@@ -144,17 +138,20 @@ class HomeCardAdapter(
         }
 
         fun applyFocusEffect(hasFocus: Boolean) {
-            val scale = if (hasFocus) 1.08f else 1.0f
-            val elev = if (hasFocus) dpToPx(8) else 0f
+            val scale = if (hasFocus) 1.06f else 1.0f
+            val elev = if (hasFocus) dpToPx(12) else 0f
             itemView.animate().scaleX(scale).scaleY(scale).translationZ(elev)
-                .setDuration(if (hasFocus) 200L else 150L)
+                .setDuration(if (hasFocus) 180L else 150L)
                 .setInterpolator(DecelerateInterpolator(1.5f)).start()
+
+            // Visible white border on focus — clear on dark backgrounds
             if (hasFocus) {
-                itemView.foreground = GradientDrawable().apply {
-                    cornerRadius = dpToPx(8)
-                    setStroke(dpToPx(3).toInt(), FOCUS_BORDER_COLOR)
-                    setColor(Color.TRANSPARENT)
+                val glow = android.graphics.drawable.GradientDrawable().apply {
+                    setStroke(3, 0xAAFFFFFF.toInt())
+                    cornerRadius = dpToPx(12)
+                    setColor(0x10FFFFFF)
                 }
+                itemView.foreground = glow
             } else {
                 itemView.foreground = null
             }
@@ -195,6 +192,5 @@ class HomeCardAdapter(
         private const val TYPE_CARD = 0
         private const val TYPE_POSTER = 1
         private const val TYPE_SEE_ALL = 2
-        private const val FOCUS_BORDER_COLOR = 0xFF0A84FF.toInt()
     }
 }

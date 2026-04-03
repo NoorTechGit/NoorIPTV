@@ -143,8 +143,13 @@ class SettingsActivity : AppCompatActivity() {
                 tv.text = options[idx]
             }
             row.setOnFocusChangeListener { v, f ->
-                v.setBackgroundResource(if (f) R.drawable.bg_settings_focused else R.drawable.bg_settings_row)
-                v.animate().scaleX(if (f) 1.01f else 1f).scaleY(if (f) 1.01f else 1f).setDuration(150).start()
+                v.animate()
+                    .scaleX(if (f) 1.05f else 1f)
+                    .scaleY(if (f) 1.05f else 1f)
+                    .translationZ(if (f) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
             }
         }
 
@@ -159,8 +164,13 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsActivity, getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show()
             }
             setOnFocusChangeListener { v, f ->
-                v.setBackgroundResource(if (f) R.drawable.bg_settings_focused else R.drawable.bg_settings_row)
-                v.animate().scaleX(if (f) 1.01f else 1f).scaleY(if (f) 1.01f else 1f).setDuration(150).start()
+                v.animate()
+                    .scaleX(if (f) 1.05f else 1f)
+                    .scaleY(if (f) 1.05f else 1f)
+                    .translationZ(if (f) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
             }
         }
     }

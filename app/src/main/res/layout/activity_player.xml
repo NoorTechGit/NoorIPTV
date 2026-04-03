@@ -142,16 +142,35 @@
         android:paddingEnd="32dp"
         android:paddingTop="10dp"
         android:paddingBottom="8dp"
+        android:clipChildren="false"
         android:visibility="gone">
 
-        <!-- ROW 0: Recent channels strip (top of transport bar) -->
+        <!-- ROW 0: Recent channels (simple LinearLayout, fills width evenly) -->
+        <LinearLayout
+            android:id="@+id/strip_recent"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:clipChildren="false"
+            android:visibility="gone" />
+
+        <!-- Keep rv_channel_strip as hidden stub so code doesn't crash -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_channel_strip"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <!-- Separator -->
+        <View
+            android:id="@+id/strip_separator"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:focusable="true"
-            android:clipToPadding="false"
-            android:paddingBottom="0dp"
+            android:layout_height="0.5dp"
+            android:background="#20FFFFFF"
+            android:layout_marginBottom="6dp"
             android:visibility="gone" />
 
         <!-- Thin separator below recent strip -->
@@ -876,6 +895,7 @@
         android:background="#E6000000"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
+        android:clipChildren="false"
         android:visibility="gone">
 
         <LinearLayout
@@ -914,6 +934,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
+            android:clipChildren="false"
             android:clipToPadding="false"
             android:paddingTop="4dp"
             android:paddingBottom="4dp" />
@@ -1000,6 +1021,8 @@
             android:id="@+id/rv_tracks"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:maxHeight="300dp" />
     </LinearLayout>
 

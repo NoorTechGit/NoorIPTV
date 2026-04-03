@@ -133,8 +133,8 @@ class MovieDetailActivity : AppCompatActivity() {
         btnPlay.text = "\u25B6  ${getString(R.string.action_play, "")}"
         btnPlay.setOnClickListener { launchPlayer() }
         btnPlay.setOnFocusChangeListener { v, hasFocus ->
-            v.animate().scaleX(if (hasFocus) 1.08f else 1f)
-                .scaleY(if (hasFocus) 1.08f else 1f)
+            v.animate().scaleX(if (hasFocus) 1.06f else 1f)
+                .scaleY(if (hasFocus) 1.06f else 1f)
                 .setDuration(150).start()
         }
 
@@ -147,8 +147,8 @@ class MovieDetailActivity : AppCompatActivity() {
             text = "\uD83C\uDFAC  ${getString(R.string.trailer)}"
             setOnClickListener { openTrailer() }
             setOnFocusChangeListener { v, hasFocus ->
-                v.animate().scaleX(if (hasFocus) 1.08f else 1f)
-                    .scaleY(if (hasFocus) 1.08f else 1f)
+                v.animate().scaleX(if (hasFocus) 1.06f else 1f)
+                    .scaleY(if (hasFocus) 1.06f else 1f)
                     .setDuration(150).start()
             }
         }

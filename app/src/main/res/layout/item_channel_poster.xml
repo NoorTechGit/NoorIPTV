@@ -5,10 +5,11 @@
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
     app:cardBackgroundColor="#1C1C1E"
-    app:cardCornerRadius="10dp"
+    app:cardCornerRadius="14dp"
     app:cardElevation="0dp"
     android:focusable="true"
     android:focusableInTouchMode="false"
+    android:stateListAnimator="@animator/card_focus_animator"
     android:nextFocusLeft="@+id/rv_categories">
 
     <LinearLayout

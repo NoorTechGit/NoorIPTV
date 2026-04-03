@@ -132,9 +132,13 @@ class HomeSectionAdapter(
             tvSeeAll?.visibility = if (showSeeAll) View.VISIBLE else View.GONE
             tvSeeAll?.setOnClickListener { onSeeAllClick?.invoke(currentSection!!) }
             tvSeeAll?.setOnFocusChangeListener { v, hasFocus ->
-                (v as TextView).setTextColor(if (hasFocus) 0xFFFFFFFF.toInt() else 0xFF0A84FF.toInt())
-                v.scaleX = if (hasFocus) 1.1f else 1f
-                v.scaleY = if (hasFocus) 1.1f else 1f
+                v.animate()
+                    .scaleX(if (hasFocus) 1.06f else 1f)
+                    .scaleY(if (hasFocus) 1.06f else 1f)
+                    .translationZ(if (hasFocus) 8f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
             }
 
             if (cardAdapter == null) {

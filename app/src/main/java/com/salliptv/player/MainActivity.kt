@@ -197,7 +197,13 @@ class MainActivity : AppCompatActivity() {
         tvSidebarBack?.let { backView ->
             backView.setOnClickListener { showTabs() }
             backView.setOnFocusChangeListener { v, hasFocus ->
-                v.setBackgroundColor(if (hasFocus) 0x330A84FF else 0x00000000)
+                v.animate()
+                    .scaleX(if (hasFocus) 1.05f else 1f)
+                    .scaleY(if (hasFocus) 1.05f else 1f)
+                    .translationZ(if (hasFocus) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
             }
         }
 
@@ -1570,7 +1576,13 @@ class MainActivity : AppCompatActivity() {
                 Glide.with(h.ivLogo.context).load(ch.logoUrl).centerInside().into(h.ivLogo)
             }
             h.itemView.setOnFocusChangeListener { v, f ->
-                v.setBackgroundColor(if (f) 0x200A84FF else Color.TRANSPARENT)
+                v.animate()
+                    .scaleX(if (f) 1.05f else 1f)
+                    .scaleY(if (f) 1.05f else 1f)
+                    .translationZ(if (f) 6f else 0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
                 if (f) epgShowInfo(ch, null, null)
             }
             h.itemView.setOnClickListener {
