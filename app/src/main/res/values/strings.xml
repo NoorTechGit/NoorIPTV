@@ -90,6 +90,12 @@
     <string name="cache_cleared">Cache cleared</string>
     <string name="settings_version">Version</string>
 
+    <!-- Delete dialog -->
+    <string name="delete_playlist_title">Delete playlist?</string>
+    <string name="delete_playlist_message">Remove \"%s\" and all its channels? This cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
     <!-- Errors -->
     <string name="error_no_url">Enter a URL</string>
     <string name="error_no_server">Enter server URL</string>

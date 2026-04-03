@@ -41,6 +41,30 @@ interface ChannelDao {
     @Query("SELECT * FROM channels WHERE playlistId = :playlistId AND groupTitle = :group AND type = :type AND hidden = 0 ORDER BY channelNumber, name LIMIT :limit")
     fun getByGroupLimited(playlistId: Int, group: String, type: String, limit: Int): List<Channel>
 
+    /**
+     * Récupère les chaînes d'un groupe, dédupliquées par groupId (meilleure qualité uniquement)
+     */
+    @Query("""
+        SELECT * FROM channels
+        WHERE playlistId = :playlistId
+        AND groupTitle = :group
+        AND type = :type
+        AND hidden = 0
+        AND groupId IS NOT NULL
+        GROUP BY groupId
+        ORDER BY
+            CASE qualityBadge
+                WHEN '4K' THEN 4
+                WHEN 'FHD' THEN 3
+                WHEN 'HD' THEN 2
+                WHEN 'SD' THEN 1
+                ELSE 0
+            END DESC,
+            channelNumber ASC, name ASC
+    """)
+    fun getByGroupGrouped(playlistId: Int, group: String, type: String): List<Channel>
+
+
     @Query("SELECT * FROM channels WHERE playlistId = :playlistId AND groupTitle = :group AND type = :type AND hidden = 0 ORDER BY channelNumber, name")
     fun getByGroupFlow(playlistId: Int, group: String, type: String): Flow<List<Channel>>
 
@@ -80,6 +104,9 @@ interface ChannelDao {
 
     @Query("UPDATE channels SET lastWatched = :timestamp WHERE id = :channelId")
     suspend fun updateLastWatched(channelId: Int, timestamp: Long)
+
+    @Query("SELECT COUNT(*) FROM channels WHERE playlistId = :playlistId AND hidden = 0")
+    fun countByPlaylist(playlistId: Int): Int
 
     @Query("DELETE FROM channels WHERE playlistId = :playlistId")
     suspend fun deleteByPlaylist(playlistId: Int)

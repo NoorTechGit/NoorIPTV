@@ -28,13 +28,31 @@
                 android:scaleType="centerCrop"
                 android:background="#111111" />
 
-            <!-- Rating badge (top-right) -->
+            <!-- Quality badge (top-right) -->
+            <TextView
+                android:id="@+id/tv_quality_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="6dp"
+                android:background="@drawable/bg_badge_quality"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:fontFamily="sans-serif-bold"
+                android:visibility="gone" />
+
+            <!-- Rating badge (below quality) -->
             <TextView
                 android:id="@+id/tv_rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
-                android:layout_margin="6dp"
+                android:layout_marginEnd="6dp"
+                android:layout_marginTop="28dp"
                 android:background="@drawable/bg_badge_rating"
                 android:paddingStart="5dp"
                 android:paddingEnd="5dp"

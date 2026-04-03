@@ -1,18 +1,24 @@
 package com.salliptv.player
 
+import android.animation.ObjectAnimator
+import android.animation.AnimatorSet
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
 import android.view.View
-import android.widget.LinearLayout
+import android.view.animation.AnimationUtils
+import android.view.animation.LayoutAnimationController
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.salliptv.player.adapter.PlaylistAdapter
+import com.salliptv.player.adapter.PlaylistItem
 import com.salliptv.player.data.AppDatabase
 import com.salliptv.player.databinding.ActivitySettingsBinding
 import com.salliptv.player.model.Channel
@@ -20,7 +26,7 @@ import com.salliptv.player.model.Playlist
 import com.salliptv.player.parser.CountryDetector
 import com.salliptv.player.parser.M3uParser
 import com.salliptv.player.parser.XtreamApi
-import com.salliptv.player.viewmodel.SettingsViewModel
+import com.salliptv.player.repository.PlaylistManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -55,6 +61,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private val httpClient = OkHttpClient()
     private var pollJob: Job? = null
+    private lateinit var playlistAdapter: PlaylistAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,6 +104,15 @@ class SettingsActivity : AppCompatActivity() {
         // Test / Save
         binding.btnTest.setOnClickListener { testConnection() }
         binding.btnSave.setOnClickListener { savePlaylist() }
+
+        // Playlist RecyclerView
+        playlistAdapter = PlaylistAdapter(
+            onRefresh = { pl -> refreshPlaylist(pl) },
+            onDelete = { pl -> confirmDeletePlaylist(pl) }
+        )
+        binding.rvPlaylists.layoutManager = LinearLayoutManager(this)
+        binding.rvPlaylists.adapter = playlistAdapter
+        binding.rvPlaylists.layoutAnimation = AnimationUtils.loadLayoutAnimation(this, R.anim.layout_animation_slide)
 
         loadSavedPlaylists()
         initPlayerSettings()
@@ -152,132 +168,75 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadSavedPlaylists() {
         lifecycleScope.launch {
             val playlists = withContext(Dispatchers.IO) { db.playlistDao().getAll() }
-            val container = binding.root.findViewById<LinearLayout>(R.id.layout_playlists) ?: return@launch
-            container.removeAllViews()
 
             if (playlists.isEmpty()) {
-                TextView(this@SettingsActivity).apply {
-                    setText(R.string.no_playlist)
-                    setTextColor(getColor(R.color.text_secondary))
-                    textSize = 14f
-                    setPadding(0, 8, 0, 16)
-                    container.addView(this)
-                }
+                binding.tvNoPlaylist.visibility = View.VISIBLE
+                binding.rvPlaylists.visibility = View.GONE
+                playlistAdapter.submitList(emptyList())
                 return@launch
             }
 
+            binding.tvNoPlaylist.visibility = View.GONE
+            binding.rvPlaylists.visibility = View.VISIBLE
+
             val now = System.currentTimeMillis()
-            val ONE_WEEK = 7L * 24 * 60 * 60 * 1000
+            val oneWeek = 7L * 24 * 60 * 60 * 1000
 
-            for (pl in playlists) {
-                val channelCount = withContext(Dispatchers.IO) {
-                    try { db.channelDao().getByType(pl.id, "LIVE").size } catch (_: Exception) { 0 }
+            val items = playlists.map { pl ->
+                val count = withContext(Dispatchers.IO) {
+                    try { db.channelDao().countByPlaylist(pl.id) } catch (_: Exception) { 0 }
                 }
+                val daysInactive = if (pl.lastUpdated > 0 && (now - pl.lastUpdated) > oneWeek) {
+                    (now - pl.lastUpdated) / (24 * 60 * 60 * 1000)
+                } else null
+                PlaylistItem(pl, count, daysInactive)
+            }
 
-                val row = LinearLayout(this@SettingsActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    setPadding(16, 12, 16, 12)
-                    setBackgroundColor(getColor(R.color.card_dark))
-                    gravity = Gravity.CENTER_VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).also { it.bottomMargin = 8 }
-                }
+            playlistAdapter.submitList(items)
+            binding.rvPlaylists.scheduleLayoutAnimation()
 
-                val info = LinearLayout(this@SettingsActivity).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                }
-
-                TextView(this@SettingsActivity).apply {
-                    text = pl.name
-                    setTextColor(getColor(R.color.text_primary))
-                    textSize = 15f
-                    info.addView(this)
-                }
-
-                TextView(this@SettingsActivity).apply {
-                    text = "${pl.type} - $channelCount ch."
-                    setTextColor(getColor(R.color.text_secondary))
-                    textSize = 12f
-                    info.addView(this)
-                }
-
-                val isInactive = pl.lastUpdated > 0 && (now - pl.lastUpdated) > ONE_WEEK
-                if (isInactive) {
-                    val daysAgo = (now - pl.lastUpdated) / (24 * 60 * 60 * 1000)
-                    TextView(this@SettingsActivity).apply {
-                        text = "Inactive ${daysAgo}d — Refresh or remove?"
-                        setTextColor(0xFFFF9500.toInt())
-                        textSize = 11f
-                        setPadding(0, 4, 0, 0)
-                        info.addView(this)
-                    }
-                }
-
-                row.addView(info)
-
-                // Refresh button
-                TextView(this@SettingsActivity).apply {
-                    text = "\u21BB"
-                    setTextColor(0xFF0A84FF.toInt())
-                    textSize = 22f
-                    setPadding(24, 16, 24, 16)
-                    isFocusable = true
-                    isFocusableInTouchMode = true
-                    isFocusableInTouchMode = true
-                    isClickable = true
-                    setBackgroundResource(R.drawable.bg_action_focused)
-                    setOnClickListener {
-                        Toast.makeText(this@SettingsActivity, "Refreshing ${pl.name}...", Toast.LENGTH_SHORT).show()
-                        lifecycleScope.launch {
-                            withContext(Dispatchers.IO) {
-                                db.channelDao().deleteByPlaylist(pl.id)
-                                db.playlistDao().updateTimestamp(pl.id, System.currentTimeMillis())
-                            }
-                            if ("XTREAM" == pl.type) loadXtreamChannels(pl, pl.id)
-                            else loadM3uChannels(pl, pl.id)
-                            loadSavedPlaylists()
-                        }
-                    }
-                    row.addView(this)
-                }
-
-                // Delete button
-                TextView(this@SettingsActivity).apply {
-                    text = "X"
-                    setTextColor(0xFFFF6B6B.toInt())
-                    textSize = 18f
-                    setPadding(24, 16, 24, 16)
-                    isFocusable = true
-                    isFocusableInTouchMode = true
-                    isFocusableInTouchMode = true
-                    isClickable = true
-                    setBackgroundResource(R.drawable.bg_action_focused)
-                    setOnClickListener {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            db.channelDao().deleteByPlaylist(pl.id)
-                            db.playlistDao().delete(pl)
-                            withContext(Dispatchers.Main) { loadSavedPlaylists() }
-                        }
-                    }
-                    row.addView(this)
-                }
-
-                container.addView(row)
-
-                // Auto-load channels if playlist has 0 channels
-                if (channelCount == 0 && pl.lastUpdated == 0L) {
-                    Toast.makeText(this@SettingsActivity, "Loading ${pl.name}...", Toast.LENGTH_SHORT).show()
-                    lifecycleScope.launch {
-                        if ("XTREAM" == pl.type) loadXtreamChannels(pl, pl.id)
-                        else loadM3uChannels(pl, pl.id)
-                        loadSavedPlaylists()
-                    }
+            // Auto-load channels for playlists with 0 channels
+            for (item in items) {
+                if (item.channelCount == 0) {
+                    showLoadingOverlay(
+                        "Loading ${item.playlist.name}…",
+                        "Downloading channels"
+                    )
+                    if ("XTREAM" == item.playlist.type) loadXtreamChannels(item.playlist, item.playlist.id)
+                    else loadM3uChannels(item.playlist, item.playlist.id)
+                    loadSavedPlaylists()
+                    break
                 }
             }
         }
+    }
+
+    private fun refreshPlaylist(pl: Playlist) {
+        Toast.makeText(this, "Refreshing ${pl.name}...", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                db.channelDao().deleteByPlaylist(pl.id)
+                db.playlistDao().updateTimestamp(pl.id, System.currentTimeMillis())
+            }
+            if ("XTREAM" == pl.type) loadXtreamChannels(pl, pl.id)
+            else loadM3uChannels(pl, pl.id)
+            loadSavedPlaylists()
+        }
+    }
+
+    private fun confirmDeletePlaylist(pl: Playlist) {
+        AlertDialog.Builder(this, R.style.AlertDialogDark)
+            .setTitle(getString(R.string.delete_playlist_title))
+            .setMessage(getString(R.string.delete_playlist_message, pl.name))
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                lifecycleScope.launch(Dispatchers.IO) {
+                    db.channelDao().deleteByPlaylist(pl.id)
+                    db.playlistDao().delete(pl)
+                    withContext(Dispatchers.Main) { loadSavedPlaylists() }
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 
     override fun onResume() {
@@ -365,6 +324,13 @@ class SettingsActivity : AppCompatActivity() {
                 val qr: Bitmap = QrCodeGenerator.generateUrlBitmap(qrUrlWithLang, 400)
                 binding.ivQrCode.setImageBitmap(qr)
                 binding.tvSyncStatus.setText(R.string.waiting_for_sync)
+                // Pulse animation on sync status
+                ObjectAnimator.ofFloat(binding.tvSyncStatus, "alpha", 0.4f, 1f).apply {
+                    duration = 1500
+                    repeatMode = ObjectAnimator.REVERSE
+                    repeatCount = ObjectAnimator.INFINITE
+                    start()
+                }
 
             } catch (e: Exception) {
                 Log.w(TAG, "Link creation failed: ${e.message}")
@@ -386,7 +352,9 @@ class SettingsActivity : AppCompatActivity() {
                     httpClient.newCall(request).execute().use { resp ->
                         if (!resp.isSuccessful || resp.body == null) return@withContext Pair("empty", null)
                         val root = JsonParser.parseString(resp.body!!.string()).asJsonObject
-                        Pair(root.get("status").asString, root.getAsJsonObject("data"))
+                        val dataEl = root.get("data")
+                        val data = if (dataEl != null && dataEl.isJsonObject) dataEl.asJsonObject else null
+                        Pair(root.get("status").asString, data)
                     }
                 }
 
@@ -452,9 +420,17 @@ class SettingsActivity : AppCompatActivity() {
             
             // Rafraîchir la liste affichée dans SettingsActivity
             loadSavedPlaylists()
-            
-            binding.tvSyncStatus.text = getString(R.string.playlist_synced, pl.name)
-            showLoading(getString(R.string.loading))
+
+            binding.tvSyncStatus.apply {
+                alpha = 0f
+                text = getString(R.string.playlist_synced, pl.name)
+                setTextColor(getColor(R.color.accent))
+                animate().alpha(1f).setDuration(400).start()
+            }
+            showLoadingOverlay(
+                getString(R.string.loading),
+                getString(R.string.playlist_synced, pl.name)
+            )
 
             if ("XTREAM" == pl.type) loadXtreamChannels(pl, playlistId)
             else loadM3uChannels(pl, playlistId)
@@ -641,28 +617,37 @@ class SettingsActivity : AppCompatActivity() {
 
     private suspend fun loadM3uChannels(pl: Playlist, playlistId: Int) {
         showLoading(getString(R.string.loading_connecting))
+        
+        val playlistManager = PlaylistManager(this@SettingsActivity, db.channelDao())
+        
         try {
-            val allChannels = mutableListOf<Channel>()
-            val result = M3uParser.parse(
-                pl.url ?: "", 
-                playlistId,
-                onProgress = { count ->
-                    runOnUiThread { showLoading(String.format(getString(R.string.loading_channels), count)) }
-                },
-                onBatch = { batch ->
-                    allChannels.addAll(batch)
-                    // Insérer par lots pour libérer la mémoire
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        db.channelDao().insertAll(batch)
+            playlistManager.addPlaylist(pl.url ?: "", playlistId)
+                .collect { state ->
+                    when(state) {
+                        is PlaylistManager.State.Downloading -> {
+                            showLoading("${getString(R.string.loading)}...")
+                        }
+                        is PlaylistManager.State.Uploading -> {
+                            showLoading("Uploading to server...")
+                        }
+                        is PlaylistManager.State.Processing -> {
+                            showLoading(state.message)
+                        }
+                        is PlaylistManager.State.Saving -> {
+                            showLoading(String.format(getString(R.string.loading_saving), state.count))
+                        }
+                        is PlaylistManager.State.Success -> {
+                            setStatus("${getString(R.string.saved)} (${state.totalChannels} channels)")
+                            binding.btnSave.isEnabled = true
+                            openFilter(playlistId)
+                        }
+                        is PlaylistManager.State.Error -> {
+                            setStatus(getString(R.string.test_failed, state.message))
+                            binding.btnSave.isEnabled = true
+                        }
+                        else -> { /* Ignore other states */ }
                     }
                 }
-            )
-            val channels = allChannels.toList()
-            showLoading(getString(R.string.loading_detecting))
-            withContext(Dispatchers.IO) { CountryDetector.detectPrefixes(channels) }
-            setStatus("${getString(R.string.saved)} (${channels.size} channels)")
-            binding.btnSave.isEnabled = true
-            openFilter(playlistId)
         } catch (e: Exception) {
             setStatus(getString(R.string.test_failed, e.message))
             binding.btnSave.isEnabled = true
@@ -688,24 +673,48 @@ class SettingsActivity : AppCompatActivity() {
         finish()
     }
 
+    private fun showLoadingOverlay(title: String, detail: String = "") {
+        binding.overlayLoading.apply {
+            if (visibility != View.VISIBLE) {
+                visibility = View.VISIBLE
+                alpha = 0f
+                animate().alpha(1f).setDuration(200).start()
+            }
+        }
+        binding.tvOverlayStatus.text = title
+        binding.tvOverlayDetail.text = detail
+    }
+
+    private fun hideLoadingOverlay() {
+        binding.overlayLoading.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction { binding.overlayLoading.visibility = View.GONE }
+            .start()
+    }
+
     private fun showLoading(text: String) {
-        binding.tvStatus.text = text
-        binding.progressStatus.visibility = View.VISIBLE
+        showLoadingOverlay(text)
     }
 
     private fun hideLoading() {
-        binding.progressStatus.visibility = View.GONE
+        hideLoadingOverlay()
     }
 
     private fun setStatus(text: String) {
-        hideLoading()
-        binding.tvStatus.text = text
+        hideLoadingOverlay()
+        // Brief toast for status messages
+        if (text.isNotEmpty()) {
+            Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
         if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-            finishAffinity()
-            System.exit(0)
+            startActivity(Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            })
+            finish()
             return true
         }
         return super.onKeyDown(keyCode, event)

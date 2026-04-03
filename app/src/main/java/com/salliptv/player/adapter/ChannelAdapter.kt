@@ -92,7 +92,17 @@ class ChannelAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val channel = getItem(position)
-        holder.tvName.text = channel.name
+        holder.tvName.text = channel.cleanName ?: channel.name
+        
+        // Quality badge
+        holder.tvQualityBadge?.apply {
+            if (!channel.qualityBadge.isNullOrEmpty()) {
+                text = channel.qualityBadge
+                visibility = View.VISIBLE
+            } else {
+                visibility = View.GONE
+            }
+        }
 
         // Logo loading
         if (!channel.logoUrl.isNullOrEmpty()) {
@@ -281,6 +291,7 @@ class ChannelAdapter(
         val tvPlaying: TextView? = view.findViewById(R.id.tv_playing)
         val tvFavBadge: TextView? = view.findViewById(R.id.tv_fav_badge)
         val tvRating: TextView? = view.findViewById(R.id.tv_rating)
+        val tvQualityBadge: TextView? = view.findViewById(R.id.tv_quality_badge)
     }
 
     private class ChannelDiffCallback : DiffUtil.ItemCallback<Channel>() {

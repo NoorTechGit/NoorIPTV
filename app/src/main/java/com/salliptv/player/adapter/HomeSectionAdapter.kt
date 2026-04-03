@@ -98,7 +98,35 @@ class HomeSectionAdapter(
             onSeeAllClick: ((HomeSection) -> Unit)?
         ) {
             currentSection = section
-            tvTitle.text = section.title
+
+            // Build title with language badge from first channel
+            val lang = section.channels.firstOrNull()?.countryPrefix
+            if (!lang.isNullOrEmpty() && section.sectionType != SectionType.LIVE
+                && section.sectionType != SectionType.FAVORITES
+                && section.sectionType != SectionType.CONTINUE_WATCHING) {
+                val spannable = android.text.SpannableStringBuilder(section.title)
+                spannable.append("  ")
+                val badge = android.text.SpannableString(lang)
+                badge.setSpan(
+                    android.text.style.BackgroundColorSpan(0x400A84FF),
+                    0, lang.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                badge.setSpan(
+                    android.text.style.RelativeSizeSpan(0.7f),
+                    0, lang.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                badge.setSpan(
+                    android.text.style.ForegroundColorSpan(0xFF0A84FF.toInt()),
+                    0, lang.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                spannable.append(badge)
+                tvTitle.text = spannable
+            } else {
+                tvTitle.text = section.title
+            }
 
             val showSeeAll = onSeeAllClick != null && section.totalCount > section.channels.size
             tvSeeAll?.visibility = if (showSeeAll) View.VISIBLE else View.GONE

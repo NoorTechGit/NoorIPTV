@@ -25,13 +25,17 @@
         android:layout_height="match_parent"
         app:use_controller="false"
         app:resize_mode="fit"
-        android:background="@android:color/black" />
+        android:background="@android:color/black"
+        android:clickable="false"
+        android:focusable="false" />
 
     <!-- Subtle dark vignette over video to keep UI readable -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#99000000" />
+        android:background="#99000000"
+        android:clickable="false"
+        android:focusable="false" />
 
     <!-- ================================================ -->
     <!-- LAYER 1: Apple TV home UI                        -->

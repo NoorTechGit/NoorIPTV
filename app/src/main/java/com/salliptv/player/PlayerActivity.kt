@@ -1,10 +1,14 @@
 package com.salliptv.player
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.Rational
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -149,6 +153,12 @@ class PlayerActivity : AppCompatActivity() {
     private var isCatchupMode = false
     private var isPremium = false
 
+    // Quality fallback
+    private var currentGroupId: String = ""
+    private var currentChannelQuality: String? = null
+    private val alternativeStreams = mutableListOf<Channel>()
+    private var isFallingBack = false
+
     // VOD controls
     private var overlayVodControls: View? = null
     private var tvVodTitle: TextView? = null
@@ -197,6 +207,11 @@ class PlayerActivity : AppCompatActivity() {
         currentGroupTitle = intent.getStringExtra("groupTitle")
 
         val channelType = intent.getStringExtra("channelType")
+
+        // Quality fallback data
+        currentGroupId = intent.getStringExtra("groupId") ?: ""
+        currentChannelQuality = intent.getStringExtra("channelQuality")
+        loadAlternativeStreams()
         isVodMode = channelType == "VOD" || channelType == "SERIES"
 
         loadChannelList()
@@ -206,6 +221,19 @@ class PlayerActivity : AppCompatActivity() {
 
         if (isVodMode) {
             initVodControls()
+        }
+
+        // First launch keyboard legend
+        val prefs = getSharedPreferences("salliptv_player", MODE_PRIVATE)
+        if (!prefs.getBoolean("legend_shown", false)) {
+            val legend = findViewById<View>(R.id.overlay_keyboard_legend)
+            legend?.visibility = View.VISIBLE
+            legend?.setOnClickListener {
+                legend.animate().alpha(0f).setDuration(300).withEndAction {
+                    legend.visibility = View.GONE
+                }.start()
+                prefs.edit().putBoolean("legend_shown", true).apply()
+            }
         }
     }
 
@@ -299,6 +327,18 @@ class PlayerActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                     playStream(currentStreamUrl, currentChannelName, currentChannelLogo, currentChannelNumber)
+                } else if (!isFallingBack && alternativeStreams.isNotEmpty()) {
+                    // Auto-fallback to next quality
+                    isFallingBack = true
+                    val next = alternativeStreams.removeAt(0)
+                    val qualityLabel = next.qualityBadge ?: "autre qualité"
+                    Toast.makeText(
+                        this@PlayerActivity,
+                        "${currentChannelQuality ?: "Flux"} indisponible → bascule $qualityLabel",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    currentChannelQuality = next.qualityBadge
+                    playStream(next.streamUrl, currentChannelName, currentChannelLogo, currentChannelNumber)
                 } else {
                     Toast.makeText(
                         this@PlayerActivity,
@@ -331,6 +371,17 @@ class PlayerActivity : AppCompatActivity() {
         btnChannels.setOnClickListener {
             hideFullOverlay()
             showChannelList()
+        }
+
+        // Quality selector
+        val tvQualitySelector = findViewById<TextView>(R.id.tv_quality_selector)
+        tvQualitySelector?.setOnClickListener { showQualityDialog() }
+        tvQualitySelector?.setOnFocusChangeListener { v, hasFocus ->
+            if (hasFocus) {
+                v.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start()
+            } else {
+                v.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
+            }
         }
 
         btnSearch.setOnClickListener {
@@ -432,6 +483,8 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
+        // Update quality badge after resolution is detected
+        updateQualityBadge()
     }
 
     // ==========================================
@@ -627,10 +680,18 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun onNumberPressed(digit: Int) {
         numberBuffer.append(digit)
-        tvNumberInput.text = numberBuffer.toString()
         tvNumberInput.alpha = 1f
         tvNumberInput.translationY = 0f
         tvNumberInput.visibility = View.VISIBLE
+
+        // Preview channel while typing number
+        val targetNumber = numberBuffer.toString().toIntOrNull() ?: 0
+        val matchedChannel = channelList.firstOrNull { it.channelNumber == targetNumber }
+        if (matchedChannel != null) {
+            tvNumberInput.text = "$numberBuffer  ${matchedChannel.cleanName ?: matchedChannel.name}"
+        } else {
+            tvNumberInput.text = numberBuffer.toString()
+        }
 
         numberInputJob?.cancel()
         numberInputJob = lifecycleScope.launch {
@@ -668,17 +729,41 @@ class PlayerActivity : AppCompatActivity() {
 
         isOverlayVisible = true
 
-        if (!currentChannelName.isNullOrEmpty()) {
-            tvCategoryName.text = currentChannelName
-        }
+        tvCategoryName.text = currentGroupTitle ?: currentChannelName ?: ""
 
         updateClock()
         updateProgramInfo()
         updateStreamBadges()
 
-        if (channelList.isNotEmpty()) {
-            channelStripAdapter.setChannels(channelList, currentPosition)
-            rvChannelStrip.scrollToPosition(maxOf(0, currentPosition - 2))
+        // Favourite toggle
+        val btnFavOverlay = findViewById<TextView>(R.id.btn_fav_overlay)
+        btnFavOverlay?.text = if (channelList.getOrNull(currentPosition)?.isFavorite == true) "♥" else "♡"
+        btnFavOverlay?.setTextColor(if (channelList.getOrNull(currentPosition)?.isFavorite == true) 0xFFFF2D55.toInt() else 0xFF8E8E93.toInt())
+        btnFavOverlay?.setOnClickListener {
+            val ch = channelList.getOrNull(currentPosition) ?: return@setOnClickListener
+            ch.isFavorite = !ch.isFavorite
+            btnFavOverlay.text = if (ch.isFavorite) "♥" else "♡"
+            btnFavOverlay.setTextColor(if (ch.isFavorite) 0xFFFF2D55.toInt() else 0xFF8E8E93.toInt())
+            btnFavOverlay.animate().scaleX(1.3f).scaleY(1.3f).setDuration(150).withEndAction {
+                btnFavOverlay.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
+            }.start()
+            lifecycleScope.launch(Dispatchers.IO) {
+                db.channelDao().updateFavorite(ch.id, ch.isFavorite)
+            }
+        }
+
+        // Load recent channels for the strip (exclude current)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val recent = db.channelDao().getRecent(playlistId).filter { it.id != currentChannelId }
+            withContext(Dispatchers.Main) {
+                if (recent.isNotEmpty()) {
+                    channelStripAdapter.setChannels(recent, -1)
+                    rvChannelStrip.visibility = View.VISIBLE
+                    rvChannelStrip.scrollToPosition(0)
+                } else {
+                    rvChannelStrip.visibility = View.GONE
+                }
+            }
         }
 
         animateIn(overlayTopBar)
@@ -699,6 +784,8 @@ class PlayerActivity : AppCompatActivity() {
         if (!isOverlayVisible) return
         isOverlayVisible = false
         hideOverlayJob?.cancel()
+        qualityPopup?.dismiss()
+        qualityPopup = null
         animateOut(overlayTopBar)
         animateOut(overlayProgramInfo)
         findViewById<View?>(R.id.overlay_info_panel)?.visibility = View.GONE
@@ -716,15 +803,21 @@ class PlayerActivity : AppCompatActivity() {
             ivChannelLogo.visibility = View.GONE
         }
 
-        val badge = buildString {
-            if (currentChannelNumber > 0) append("$currentChannelNumber  ")
-            if (currentChannelName != null) append(currentChannelName)
+        tvChannelBadge.text = if (currentChannelNumber > 0) "$currentChannelNumber" else ""
+        tvProgramTitle.text = currentChannelName ?: ""
+
+        // Show LIVE badge
+        val liveBadge = findViewById<TextView?>(R.id.tv_channel_name)
+        if (!isVodMode) {
+            liveBadge?.visibility = View.VISIBLE
         }
-        tvChannelBadge.text = badge
 
         val program = currentProgram
         if (program != null) {
-            tvProgramTitle.text = program.title
+            // Current program
+            findViewById<TextView>(R.id.tv_now_playing).text = "${formatTime(program.startTime)} - ${formatTime(program.endTime)}  ${program.title}"
+            findViewById<TextView>(R.id.tv_now_playing).visibility = View.VISIBLE
+
             tvProgramTime.text = "${formatTime(program.startTime)} - ${formatTime(program.endTime)}"
 
             val totalSec = program.endTime - program.startTime
@@ -737,33 +830,18 @@ class PlayerActivity : AppCompatActivity() {
                 pbProgramProgress.visibility = View.VISIBLE
             }
 
-            if (!program.description.isNullOrEmpty()) {
-                tvProgramDesc.text = program.description
-                tvProgramDesc.visibility = View.VISIBLE
-            } else {
-                tvProgramDesc.visibility = View.GONE
-            }
+            // Description and next program are only shown in the info panel (DOWN press)
+            tvProgramDesc.visibility = View.GONE
         } else {
-            tvProgramTitle.text = currentChannelName ?: ""
+            findViewById<TextView>(R.id.tv_now_playing).visibility = View.GONE
             tvProgramTime.text = ""
             tvProgramDuration.text = ""
             tvProgramDesc.visibility = View.GONE
             pbProgramProgress.visibility = View.INVISIBLE
         }
 
-        val epg = currentEpg
-        if (epg != null) {
-            val now = System.currentTimeMillis() / 1000
-            val next = epg.firstOrNull { it.startTime > now }
-            if (next != null) {
-                tvNextProgram.text = "${formatTime(next.startTime)} - ${formatTime(next.endTime)}  ${next.title}"
-                tvNextProgram.visibility = View.VISIBLE
-            } else {
-                tvNextProgram.visibility = View.GONE
-            }
-        } else {
-            tvNextProgram.visibility = View.GONE
-        }
+        // Next program is only shown in the info panel (DOWN press)
+        tvNextProgram.visibility = View.GONE
     }
 
     // ==========================================
@@ -774,7 +852,7 @@ class PlayerActivity : AppCompatActivity() {
         if (isOverlayVisible) return
 
         tvMiniNumber.text = if (ch.channelNumber > 0) ch.channelNumber.toString() else ""
-        tvMiniName.text = ch.name
+        tvMiniName.text = ch.cleanName ?: ch.name
 
         if (!ch.logoUrl.isNullOrEmpty()) {
             Glide.with(this).load(ch.logoUrl).into(ivMiniLogo)
@@ -783,7 +861,23 @@ class PlayerActivity : AppCompatActivity() {
             ivMiniLogo.visibility = View.GONE
         }
 
+        // Show current EPG program in mini info
         tvMiniEpg.text = ""
+        if (!ch.cleanName.isNullOrEmpty()) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val programs = loadEpgFromBackend(ch.cleanName!!)
+                    val now = System.currentTimeMillis() / 1000
+                    val current = programs.firstOrNull { it.startTime <= now && it.endTime >= now }
+                    withContext(Dispatchers.Main) {
+                        if (current != null) {
+                            tvMiniEpg.text = "${formatTime(current.startTime)} ${current.title}"
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
         animateIn(overlayMiniInfo)
 
         hideMiniInfoJob?.cancel()
@@ -1059,13 +1153,28 @@ class PlayerActivity : AppCompatActivity() {
     private fun loadChannelList() {
         lifecycleScope.launch(Dispatchers.IO) {
             val type = intent.getStringExtra("channelType") ?: "LIVE"
-            val channels = db.channelDao().getByType(intent.getIntExtra("playlistId", 1), type)
+            val plId = intent.getIntExtra("playlistId", 1)
+            val group = intent.getStringExtra("groupTitle")
+
+            // Load channels from same group (not all 8000+ channels)
+            val channels = if (!group.isNullOrEmpty()) {
+                db.channelDao().getByGroup(plId, group, type)
+            } else {
+                db.channelDao().getByType(plId, type)
+            }
+
             withContext(Dispatchers.Main) {
                 if (channels.isNotEmpty()) {
                     channelList = channels
+
+                    // Find current channel position in filtered list
+                    val currentId = intent.getIntExtra("channelId", -1)
+                    val idx = channels.indexOfFirst { it.id == currentId }
+                    if (idx >= 0) currentPosition = idx
+
                     overlayAdapter.setChannels(channels, currentPosition)
                     channelStripAdapter.setChannels(channels, currentPosition)
-                    tvOverlayTitle.text = when (type) {
+                    tvOverlayTitle.text = group ?: when (type) {
                         "VOD" -> getString(R.string.tab_vod)
                         "SERIES" -> getString(R.string.tab_series)
                         else -> getString(R.string.tab_live)
@@ -1107,26 +1216,72 @@ class PlayerActivity : AppCompatActivity() {
     // ==========================================
 
     private fun initXtreamApi() {
+        Log.d(TAG, "initXtreamApi: playlistId=$playlistId")
         if (playlistId < 0) return
         lifecycleScope.launch(Dispatchers.IO) {
             val pl = db.playlistDao().getById(playlistId)
-            if (pl != null && pl.type == "XTREAM") {
-                xtreamApi = XtreamApi(pl.url ?: "", pl.username ?: "", pl.password ?: "")
+            Log.d(TAG, "initXtreamApi: pl=${pl?.type}, url=${pl?.url?.take(50)}")
+            if (pl == null) return@launch
+
+            if (pl.type == "XTREAM" && !pl.url.isNullOrEmpty()) {
+                xtreamApi = XtreamApi(pl.url!!, pl.username ?: "", pl.password ?: "")
                 isXtream = true
-                if (currentStreamId > 0) loadEpg(currentStreamId)
+            } else if (pl.type == "M3U" && !pl.url.isNullOrEmpty()) {
+                val url = pl.url!!
+                val userMatch = Regex("[?&]username=([^&]+)").find(url)
+                val passMatch = Regex("[?&]password=([^&]+)").find(url)
+                Log.d(TAG, "initXtreamApi: M3U detect user=${userMatch != null} pass=${passMatch != null}")
+                if (userMatch != null && passMatch != null) {
+                    val serverUrl = url.substringBefore("/get.php")
+                    val user = userMatch.groupValues[1]
+                    val pass = passMatch.groupValues[1]
+                    Log.d(TAG, "initXtreamApi: Xtream detected server=$serverUrl user=$user")
+                    xtreamApi = XtreamApi(serverUrl, user, pass)
+                    isXtream = true
+                }
+            }
+
+            Log.d(TAG, "initXtreamApi: isXtream=$isXtream, streamId=$currentStreamId")
+            if (isXtream && currentStreamId > 0) {
+                loadEpg(currentStreamId)
             }
         }
     }
 
     private fun loadEpg(streamId: Int) {
-        if (!isXtream || xtreamApi == null || streamId <= 0 || !isPremium) return
+        Log.d(TAG, "loadEpg: streamId=$streamId, channelName=$currentChannelName")
         lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val programs = xtreamApi!!.getEpg(streamId)
+            var programs: List<com.salliptv.player.model.EpgProgram> = emptyList()
+
+            // Try 1: Our backend EPG API (most complete, open source EPG)
+            if (!currentChannelName.isNullOrEmpty()) {
+                try {
+                    programs = loadEpgFromBackend(currentChannelName!!)
+                    Log.d(TAG, "Backend EPG: ${programs.size} programs for '$currentChannelName'")
+                } catch (e: Exception) {
+                    Log.d(TAG, "Backend EPG failed: ${e.message}")
+                }
+            }
+
+            // Try 2: Xtream API fallback (if backend had nothing)
+            if (programs.isEmpty() && isXtream && xtreamApi != null && streamId > 0) {
+                try {
+                    programs = xtreamApi!!.getEpg(streamId)
+                    Log.d(TAG, "Xtream EPG fallback: ${programs.size} programs")
+                } catch (e: Exception) {
+                    Log.d(TAG, "Xtream EPG failed: ${e.message}")
+                }
+            }
+
+            val currentTime = System.currentTimeMillis() / 1000
+            Log.d(TAG, "EPG result: ${programs.size} programs, currentTime=$currentTime")
+
+            if (programs.isNotEmpty()) {
                 currentEpg = programs
-                val currentTime = System.currentTimeMillis() / 1000
                 val now = programs.firstOrNull { it.startTime <= currentTime && it.endTime >= currentTime }
+                val next = programs.firstOrNull { it.startTime > currentTime }
                 currentProgram = now
+                Log.d(TAG, "EPG now=${now?.title}, next=${next?.title}")
 
                 withContext(Dispatchers.Main) {
                     if (now != null && overlayMiniInfo.visibility == View.VISIBLE) {
@@ -1134,9 +1289,37 @@ class PlayerActivity : AppCompatActivity() {
                     }
                     if (isOverlayVisible) updateProgramInfo()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "EPG load error: ${e.message}")
             }
+        }
+    }
+
+    private fun loadEpgFromBackend(channelName: String): List<com.salliptv.player.model.EpgProgram> {
+        val url = "https://salliptv.com/api/epg/by-name/${java.net.URLEncoder.encode(channelName, "UTF-8")}"
+        val request = okhttp3.Request.Builder().url(url).get().build()
+        val client = okhttp3.OkHttpClient.Builder()
+            .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) return emptyList()
+
+        val body = response.body?.string() ?: return emptyList()
+        val json = com.google.gson.JsonParser.parseString(body).asJsonObject
+        val programsArray = json.getAsJsonArray("programs") ?: return emptyList()
+
+        return programsArray.mapNotNull { elem ->
+            val obj = elem.asJsonObject
+            val title = obj.get("title")?.asString ?: return@mapNotNull null
+            val start = obj.get("start")?.asLong ?: return@mapNotNull null
+            val end = obj.get("end")?.asLong ?: return@mapNotNull null
+
+            com.salliptv.player.model.EpgProgram(
+                title = title,
+                startTime = start,
+                endTime = end,
+                description = obj.get("desc")?.asString
+            )
         }
     }
 
@@ -1145,7 +1328,7 @@ class PlayerActivity : AppCompatActivity() {
         epgRefreshJob = lifecycleScope.launch {
             while (isActive) {
                 delay(EPG_REFRESH_INTERVAL)
-                if (currentStreamId > 0 && isXtream) loadEpg(currentStreamId)
+                loadEpg(currentStreamId)
             }
         }
     }
@@ -1191,6 +1374,136 @@ class PlayerActivity : AppCompatActivity() {
     // PLAYBACK
     // ==========================================
 
+    // ============================================================================
+    // QUALITY FALLBACK
+    // ============================================================================
+
+    private var allQualityVariants = mutableListOf<Channel>()
+
+    private fun loadAlternativeStreams() {
+        if (currentGroupId.isEmpty() || playlistId < 0) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getInstance(this@PlayerActivity)
+            // Load ALL variants (including hidden ones) for this groupId
+            val all = db.channelDao().getAlternativeVersions(playlistId, currentGroupId, -1)
+            // Also include current channel
+            val current = db.channelDao().getById(currentChannelId)
+            withContext(Dispatchers.Main) {
+                allQualityVariants.clear()
+                if (current != null) allQualityVariants.add(current)
+                allQualityVariants.addAll(all)
+                // Remove duplicates by id
+                allQualityVariants = allQualityVariants.distinctBy { it.id }.toMutableList()
+
+                // Alternatives = all except current
+                alternativeStreams.clear()
+                alternativeStreams.addAll(allQualityVariants.filter { it.id != currentChannelId })
+                updateQualityBadge()
+            }
+        }
+    }
+
+    private fun updateQualityBadge() {
+        val badge = findViewById<TextView>(R.id.tv_quality_selector)
+        badge?.let {
+            val q = currentChannelQuality ?: tvBadgeResolution?.text?.toString() ?: ""
+            val altCount = alternativeStreams.size
+            if (q.isNotEmpty()) {
+                it.text = if (altCount > 0) "$q  +$altCount" else q
+            } else if (altCount > 0) {
+                it.text = "+$altCount"
+            } else {
+                it.visibility = View.GONE
+                return
+            }
+            it.visibility = View.VISIBLE
+        }
+    }
+
+    private var qualityPopup: android.widget.PopupWindow? = null
+
+    private fun showQualityDialog() {
+        if (allQualityVariants.size <= 1) {
+            Toast.makeText(this, "Une seule qualité disponible", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val anchor = findViewById<View>(R.id.tv_quality_selector) ?: return
+
+        // Build compact quality pills
+        val sortedVariants = allQualityVariants.sortedByDescending {
+            when (it.qualityBadge) { "4K" -> 5; "FHD" -> 4; "HD" -> 3; "SD" -> 1; else -> 0 }
+        }
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(12, 8, 12, 8)
+            setBackgroundColor(0xE6181818.toInt())
+        }
+
+        for (ch in sortedVariants) {
+            val label = ch.qualityBadge ?: "Auto"
+            val isCurrent = ch.id == currentChannelId
+            val pill = TextView(this).apply {
+                text = label
+                textSize = 13f
+                setTextColor(if (isCurrent) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+                setBackgroundColor(if (isCurrent) 0xFF0A84FF.toInt() else 0x33FFFFFF.toInt())
+                setPadding(20, 8, 20, 8)
+                val lp = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.marginEnd = 8
+                layoutParams = lp
+                isFocusable = true
+                isFocusableInTouchMode = true
+                isClickable = true
+                setOnClickListener {
+                    qualityPopup?.dismiss()
+                    qualityPopup = null
+                    if (!isCurrent) {
+                        isFallingBack = false
+                        currentChannelId = ch.id
+                        currentStreamId = ch.streamId
+                        currentChannelQuality = ch.qualityBadge
+                        currentStreamUrl = ch.streamUrl
+                        player?.setMediaItem(MediaItem.fromUri(Uri.parse(ch.streamUrl)))
+                        player?.prepare()
+                        player?.play()
+                        Log.i(TAG, "Quality: ${ch.qualityBadge}")
+                        alternativeStreams.clear()
+                        alternativeStreams.addAll(allQualityVariants.filter { it.id != currentChannelId })
+                        updateQualityBadge()
+                    }
+                }
+                setOnFocusChangeListener { v, hasFocus ->
+                    if (!isCurrent) {
+                        v.setBackgroundColor(if (hasFocus) 0x66FFFFFF.toInt() else 0x33FFFFFF.toInt())
+                    }
+                    v.scaleX = if (hasFocus) 1.1f else 1f
+                    v.scaleY = if (hasFocus) 1.1f else 1f
+                }
+            }
+            container.addView(pill)
+        }
+
+        qualityPopup = android.widget.PopupWindow(
+            container,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            isOutsideTouchable = true
+            elevation = 16f
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0x00000000))
+            showAsDropDown(anchor, 0, -anchor.height - 60)
+        }
+
+        // Focus first pill
+        container.post { container.getChildAt(0)?.requestFocus() }
+    }
+
     private fun playStream(url: String?, name: String?, logo: String?, number: Int) {
         if (url.isNullOrEmpty()) {
             Toast.makeText(this, "No stream URL", Toast.LENGTH_SHORT).show()
@@ -1216,7 +1529,7 @@ class PlayerActivity : AppCompatActivity() {
 
         if (isVodMode) applyPreferredLanguages()
 
-        if (currentStreamId > 0 && isXtream) loadEpg(currentStreamId)
+        loadEpg(currentStreamId)
         startEpgRefresh()
 
         Log.i(TAG, "Playing: $name -> $url")
@@ -1230,13 +1543,13 @@ class PlayerActivity : AppCompatActivity() {
         currentChannelId = ch.id
         currentStreamId = ch.streamId
         currentStreamUrl = ch.streamUrl
-        currentChannelName = ch.name
+        currentChannelName = ch.cleanName ?: ch.name
         currentChannelLogo = ch.logoUrl
         currentChannelNumber = ch.channelNumber
         currentGroupTitle = ch.groupTitle
 
         showMiniInfo(ch)
-        playStream(ch.streamUrl, ch.name, ch.logoUrl, ch.channelNumber)
+        playStream(ch.streamUrl, currentChannelName, ch.logoUrl, ch.channelNumber)
 
         lifecycleScope.launch(Dispatchers.IO) {
             db.channelDao().updateLastWatched(ch.id, System.currentTimeMillis())
@@ -1248,6 +1561,16 @@ class PlayerActivity : AppCompatActivity() {
     // ==========================================
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        // Dismiss first-launch legend on any key press
+        val legend = findViewById<View?>(R.id.overlay_keyboard_legend)
+        if (legend != null && legend.visibility == View.VISIBLE) {
+            legend.animate().alpha(0f).setDuration(300).withEndAction {
+                legend.visibility = View.GONE
+            }.start()
+            getSharedPreferences("salliptv_player", MODE_PRIVATE).edit().putBoolean("legend_shown", true).apply()
+            return true
+        }
+
         if (isTrackSelectorVisible) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
                 hideTrackSelector()
@@ -1281,10 +1604,33 @@ class PlayerActivity : AppCompatActivity() {
                     return true
                 }
                 KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    // Show info panel if not visible yet
+                    // First DOWN: focus recent channels strip
+                    // Second DOWN: show info panel
+                    val strip = rvChannelStrip
                     val infoPanel = findViewById<View?>(R.id.overlay_info_panel)
-                    if (infoPanel != null && infoPanel.visibility != View.VISIBLE) {
+
+                    if (strip.visibility == View.VISIBLE && !strip.hasFocus()) {
+                        // Focus the recent channels strip
+                        strip.requestFocus()
+                        strip.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                    } else if (infoPanel != null && infoPanel.visibility != View.VISIBLE) {
                         infoPanel.visibility = View.VISIBLE
+                        // Populate EPG timeline
+                        val infoDesc = findViewById<TextView>(R.id.tv_info_program_desc)
+                        val epgList = currentEpg
+                        if (epgList != null && epgList.isNotEmpty()) {
+                            val now = System.currentTimeMillis() / 1000
+                            val upcoming = epgList.filter { it.endTime > now }.take(6)
+                            val epgText = upcoming.joinToString("\n") { prog ->
+                                val isCur = prog.startTime <= now && prog.endTime >= now
+                                val prefix = if (isCur) "● " else "  "
+                                "${prefix}${formatTime(prog.startTime)} - ${formatTime(prog.endTime)}  ${prog.title}"
+                            }
+                            infoDesc?.text = epgText
+                            infoDesc?.visibility = View.VISIBLE
+                        }
+                    } else {
+                        return super.onKeyDown(keyCode, event)
                     }
                     // Reset auto-hide timer
                     hideOverlayJob?.cancel()
@@ -1364,14 +1710,9 @@ class PlayerActivity : AppCompatActivity() {
                     player?.let { it.seekTo(maxOf(0L, it.currentPosition - 30000L)) }
                     return true
                 }
-                if (isXtream && !currentEpg.isNullOrEmpty()) {
-                    if (!isPremium) {
-                        Toast.makeText(this, getString(R.string.feature_locked), Toast.LENGTH_SHORT).show()
-                        return true
-                    }
-                    showCatchupOptions()
-                    return true
-                }
+                // LIVE mode: LEFT opens channel list
+                showChannelList()
+                return true
             }
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
@@ -1507,7 +1848,7 @@ class PlayerActivity : AppCompatActivity() {
             val ch = items[position]
             val label = buildString {
                 if (ch.channelNumber > 0) append("${ch.channelNumber} ")
-                append(ch.name)
+                append(ch.cleanName ?: ch.name)
             }
             h.tvName.text = label
             h.tvEpg.text = ""
@@ -1582,7 +1923,7 @@ class PlayerActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(h: VH, position: Int) {
             val ch = items[position]
-            h.tvName.text = ch.name
+            h.tvName.text = ch.cleanName ?: ch.name
             h.tvNum.text = if (ch.channelNumber > 0) ch.channelNumber.toString() else ""
 
             if (!ch.logoUrl.isNullOrEmpty()) {
@@ -1678,6 +2019,26 @@ class PlayerActivity : AppCompatActivity() {
         super.onPause()
         player?.pause()
         stopEpgRefresh()
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isVodMode) {
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+            )
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPiP: Boolean, config: Configuration) {
+        super.onPictureInPictureModeChanged(isInPiP, config)
+        if (isInPiP) {
+            hideFullOverlay()
+            hideChannelList()
+            overlayMiniInfo.visibility = View.GONE
+        }
     }
 
     override fun onDestroy() {

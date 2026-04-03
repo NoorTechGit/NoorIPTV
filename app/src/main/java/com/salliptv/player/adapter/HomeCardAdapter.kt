@@ -161,26 +161,28 @@ class HomeCardAdapter(
         }
 
         private fun bindCard(channel: Channel, sectionType: SectionType) {
-            tvTitle?.text = channel.name
+            tvTitle?.text = channel.cleanName ?: channel.name
             tvSubtitle?.apply {
                 val sub = channel.groupTitle
                 if (!sub.isNullOrEmpty()) { text = sub; visibility = View.VISIBLE } else visibility = View.GONE
             }
             ivFavBadge?.visibility = if (channel.isFavorite) View.VISIBLE else View.GONE
             tvLiveBadge?.visibility = if (sectionType == SectionType.LIVE) View.VISIBLE else View.GONE
-            if (!channel.logoUrl.isNullOrEmpty() && ivThumb != null) {
-                Glide.with(itemView.context).load(channel.logoUrl)
+            val thumbImage = channel.posterUrl ?: channel.backdropUrl ?: channel.logoUrl
+            if (!thumbImage.isNullOrEmpty() && ivThumb != null) {
+                Glide.with(itemView.context).load(thumbImage)
                     .placeholder(R.drawable.bg_card_normal).error(R.drawable.bg_card_normal)
                     .centerCrop().into(ivThumb)
             } else ivThumb?.setImageResource(R.drawable.bg_card_normal)
         }
 
         private fun bindPoster(channel: Channel) {
-            tvPosterName?.text = channel.name
+            tvPosterName?.text = channel.cleanName ?: channel.name
             tvPosterSubtitle?.text = channel.groupTitle
             ivPosterFavBadge?.visibility = if (channel.isFavorite) View.VISIBLE else View.GONE
-            if (!channel.logoUrl.isNullOrEmpty() && ivPoster != null) {
-                Glide.with(itemView.context).load(channel.logoUrl)
+            val posterImage = channel.posterUrl ?: channel.backdropUrl ?: channel.logoUrl
+            if (!posterImage.isNullOrEmpty() && ivPoster != null) {
+                Glide.with(itemView.context).load(posterImage)
                     .placeholder(R.drawable.bg_poster_placeholder).error(R.drawable.bg_poster_placeholder)
                     .centerCrop().into(ivPoster)
             } else ivPoster?.setImageResource(R.drawable.bg_poster_placeholder)

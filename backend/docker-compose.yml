@@ -1,0 +1,299 @@
+# SallIPTV Backend - Infrastructure as Code
+# Style: ConformScan (Professional Docker Deployment)
+# Domaine: api.salliptv.com (à configurer dans Traefik)
+
+version: '3.8'
+
+networks:
+  # Réseau externe Traefik (déjà existant sur le serveur)
+  traefik-public:
+    external: true
+  
+  # Réseau interne SallIPTV
+  salliptv-internal:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+
+services:
+  # ═══════════════════════════════════════════════════════════════
+  # API GATEWAY (FastAPI)
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: salliptv-api
+    restart: unless-stopped
+    
+    environment:
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-iptv}:${POSTGRES_PASSWORD}@salliptv-db:5432/${POSTGRES_DB:-iptv}
+      
+      # Redis (Cache + Queue)
+      - REDIS_URL=redis://salliptv-redis:6379/0
+      - CELERY_BROKER_URL=redis://salliptv-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://salliptv-redis:6379/0
+      
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      
+      # External APIs
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      
+      # App Settings
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info
+      - MAX_WORKERS=2
+      
+    volumes:
+      - ./logs:/app/logs
+      
+    networks:
+      - traefik-public
+      - salliptv-internal
+      
+    depends_on:
+      salliptv-db:
+        condition: service_healthy
+      salliptv-redis:
+        condition: service_healthy
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits (12GB total server)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.5'
+        reservations:
+          memory: 512M
+    
+    # Traefik Labels (Routing) - Path based: salliptv.com/api/*
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      
+      # HTTP Router - Match salliptv.com/api/*
+      - "traefik.http.routers.salliptv-api.rule=Host(`salliptv.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.salliptv-api.entrypoints=websecure"
+      - "traefik.http.routers.salliptv-api.tls.certresolver=letsencrypt"
+      
+      # Strip Prefix /api -> FastAPI reçoit /health (pas /api/health)
+      - "traefik.http.middlewares.salliptv-api-stripprefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.salliptv-api-stripprefix.stripprefix.forceSlash=false"
+      
+      # Security Headers
+      - "traefik.http.middlewares.salliptv-security.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.salliptv-security.headers.stsIncludeSubdomains=true"
+      
+      # Combine middlewares
+      - "traefik.http.routers.salliptv-api.middlewares=salliptv-api-stripprefix,salliptv-security"
+      
+      # Load Balancer
+      - "traefik.http.services.salliptv-api.loadbalancer.server.port=8000"
+      - "traefik.http.services.salliptv-api.loadbalancer.healthcheck.path=/health"
+      
+      # Rate Limiting
+      - "traefik.http.middlewares.salliptv-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.salliptv-ratelimit.ratelimit.burst=50"
+
+  # ═══════════════════════════════════════════════════════════════
+  # CELERY WORKER - PARSING (Heavy CPU)
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-worker-parsing:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: salliptv-worker-parsing
+    restart: unless-stopped
+    
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q parsing -n parsing@%h --prefetch-multiplier=1
+    
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-iptv}:${POSTGRES_PASSWORD}@salliptv-db:5432/${POSTGRES_DB:-iptv}
+      - REDIS_URL=redis://salliptv-redis:6379/0
+      - CELERY_BROKER_URL=redis://salliptv-redis:6379/0
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - C_FORCE_ROOT=true  # Docker requirement
+      
+    volumes:
+      - ./logs:/app/logs
+      
+    networks:
+      - salliptv-internal
+      
+    depends_on:
+      - salliptv-db
+      - salliptv-redis
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '3'  # Parsing intensif
+        reservations:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════
+  # CELERY WORKER - ML/RECOMMENDATIONS
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-worker-ml:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: salliptv-worker-ml
+    restart: unless-stopped
+    
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 -Q ml,default -n ml@%h
+    
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-iptv}:${POSTGRES_PASSWORD}@salliptv-db:5432/${POSTGRES_DB:-iptv}
+      - REDIS_URL=redis://salliptv-redis:6379/0
+      - CELERY_BROKER_URL=redis://salliptv-redis:6379/0
+      - C_FORCE_ROOT=true
+      
+    volumes:
+      - ./logs:/app/logs
+      
+    networks:
+      - salliptv-internal
+      
+    depends_on:
+      - salliptv-db
+      - salliptv-redis
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
+
+  # ═══════════════════════════════════════════════════════════════
+  # CELERY BEAT (Scheduler)
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: salliptv-beat
+    restart: unless-stopped
+    
+    command: celery -A app.celery_app beat --loglevel=info --scheduler redis --schedule-filename /tmp/celerybeat-schedule
+    
+    environment:
+      - CELERY_BROKER_URL=redis://salliptv-redis:6379/0
+      - C_FORCE_ROOT=true
+      
+    networks:
+      - salliptv-internal
+      
+    depends_on:
+      - salliptv-redis
+    
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════
+  # POSTGRESQL (with pgvector)
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-db:
+    image: ankane/pgvector:v0.5.1
+    container_name: salliptv-db
+    restart: unless-stopped
+    
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-iptv}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-iptv}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./deploy/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    
+    networks:
+      - salliptv-internal
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iptv}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    shm_size: '512mb'
+    
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '1'
+        reservations:
+          memory: 1G
+
+  # ═══════════════════════════════════════════════════════════════
+  # REDIS (Cache + Queue)
+  # ═══════════════════════════════════════════════════════════════
+  salliptv-redis:
+    image: redis:7-alpine
+    container_name: salliptv-redis
+    restart: unless-stopped
+    
+    command: redis-server /usr/local/etc/redis/redis.conf
+    
+    volumes:
+      - redis-data:/data
+      - ./deploy/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      
+    networks:
+      - salliptv-internal
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════
+  # OPTIONAL: Flower (Celery Monitoring) - Décommenter si besoin
+  # ═══════════════════════════════════════════════════════════════
+  # salliptv-flower:
+  #   image: mher/flower:latest
+  #   container_name: salliptv-flower
+  #   restart: unless-stopped
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://salliptv-redis:6379/0
+  #     - FLOWER_BASIC_AUTH=admin:${FLOWER_PASSWORD}
+  #   networks:
+  #     - traefik-public
+  #     - salliptv-internal
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.salliptv-flower.rule=Host(`flower.salliptv.com`)"
+  #     - "traefik.http.routers.salliptv-flower.entrypoints=websecure"
+  #     - "traefik.http.routers.salliptv-flower.tls.certresolver=letsencrypt"
+  #   profiles: ["monitoring"]

@@ -48,6 +48,7 @@ import kotlinx.coroutines.withContext
 import com.salliptv.player.adapter.HomeSectionAdapter
 import com.salliptv.player.adapter.HomeSection
 import com.salliptv.player.adapter.SectionType
+import com.salliptv.player.view.PremiumLoader
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -269,7 +270,7 @@ class MainActivity : AppCompatActivity() {
 
             val intent = Intent(this, PlayerActivity::class.java).apply {
                 putExtra("channelId", channel.id)
-                putExtra("channelName", channel.name)
+                putExtra("channelName", channel.cleanName ?: channel.name)
                 putExtra("channelLogo", channel.logoUrl)
                 putExtra("channelNumber", channel.channelNumber)
                 putExtra("streamUrl", channel.streamUrl)
@@ -279,6 +280,8 @@ class MainActivity : AppCompatActivity() {
                 putExtra("isPremium", premiumManager.isPremium())
                 putExtra("groupTitle", channel.groupTitle ?: currentGroup)
                 putExtra("channelType", currentType)
+                putExtra("groupId", channel.groupId ?: "")
+                putExtra("channelQuality", channel.qualityBadge ?: "")
             }
             startActivity(intent)
         }
@@ -320,11 +323,12 @@ class MainActivity : AppCompatActivity() {
         tabRecentVis = findViewById(R.id.tab_recent_vis)
         // tab_settings_vis removed — settings icon in top bar is sufficient
 
-        tabHomeVis?.setOnClickListener { switchTab("HOME") }
-        tabLiveVis?.setOnClickListener { switchTab("LIVE") }
-        tabVodVis?.setOnClickListener { switchTab("VOD") }
-        tabSeriesVis?.setOnClickListener { switchTab("SERIES") }
-        tabFavoritesVis?.setOnClickListener { loadFavorites() }
+        Log.d(TAG, "tabHomeVis=${tabHomeVis != null}, tabLiveVis=${tabLiveVis != null}, tabVodVis=${tabVodVis != null}")
+        tabHomeVis?.setOnClickListener { Log.d(TAG, "TAP: HOME"); switchTab("HOME") }
+        tabLiveVis?.setOnClickListener { Log.d(TAG, "TAP: LIVE"); switchTab("LIVE") }
+        tabVodVis?.setOnClickListener { Log.d(TAG, "TAP: VOD"); switchTab("VOD") }
+        tabSeriesVis?.setOnClickListener { Log.d(TAG, "TAP: SERIES"); switchTab("SERIES") }
+        tabFavoritesVis?.setOnClickListener { Log.d(TAG, "TAP: FAV"); loadFavorites() }
         tabRecentVis?.setOnClickListener { loadRecent() }
         // tab_settings_vis removed — settings icon in top bar is sufficient
 
@@ -733,6 +737,7 @@ class MainActivity : AppCompatActivity() {
         // Show carousel mode, hide live list
         val liveListContainer = findViewById<View?>(R.id.live_list_container)
         liveListContainer?.visibility = View.GONE
+        recyclerSections?.visibility = View.VISIBLE
         rvCategories.visibility = View.GONE
         tvCategoryName.text = getString(R.string.tab_favorites)
         progress.visibility = View.VISIBLE
@@ -751,9 +756,7 @@ class MainActivity : AppCompatActivity() {
                 if (channels.isEmpty()) {
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = getString(R.string.no_channels)
-                    recyclerSections?.visibility = View.GONE
                 } else if (::homeSectionAdapter.isInitialized && recyclerSections != null) {
-                    recyclerSections?.visibility = View.VISIBLE
                     val sections = listOf(
                         HomeSection(getString(R.string.tab_favorites), channels, SectionType.FAVORITES)
                     )
@@ -789,6 +792,7 @@ class MainActivity : AppCompatActivity() {
         // Show carousel mode, hide live list
         val liveListContainer = findViewById<View?>(R.id.live_list_container)
         liveListContainer?.visibility = View.GONE
+        recyclerSections?.visibility = View.VISIBLE
         rvCategories.visibility = View.GONE
         tvCategoryName.text = getString(R.string.tab_recent)
         progress.visibility = View.VISIBLE
@@ -807,9 +811,7 @@ class MainActivity : AppCompatActivity() {
                 if (channels.isEmpty()) {
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = getString(R.string.no_channels)
-                    recyclerSections?.visibility = View.GONE
                 } else if (::homeSectionAdapter.isInitialized && recyclerSections != null) {
-                    recyclerSections?.visibility = View.VISIBLE
                     val sections = listOf(
                         HomeSection(getString(R.string.tab_recent), channels, SectionType.CONTINUE_WATCHING)
                     )
@@ -846,7 +848,7 @@ class MainActivity : AppCompatActivity() {
                         val liveGroups = db.channelDao().getGroups(currentPlaylistId, "LIVE")
                         for (group in liveGroups.take(4)) {
                             if (group.isNullOrEmpty()) continue
-                            val channels = db.channelDao().getByGroup(currentPlaylistId, group, "LIVE")
+                            val channels = db.channelDao().getByGroupGrouped(currentPlaylistId, group, "LIVE")
                             if (channels.isNotEmpty()) {
                                 sections.add(HomeSection(group, channels.take(10), SectionType.LIVE))
                             }
@@ -874,7 +876,7 @@ class MainActivity : AppCompatActivity() {
                         val groups = db.channelDao().getGroups(currentPlaylistId, "LIVE")
                         for (group in groups) {
                             if (group.isNullOrEmpty()) continue
-                            val channels = db.channelDao().getByGroup(currentPlaylistId, group, "LIVE")
+                            val channels = db.channelDao().getByGroupGrouped(currentPlaylistId, group, "LIVE")
                             if (channels.isNotEmpty()) {
                                 sections.add(HomeSection(group, channels, SectionType.LIVE))
                             }
@@ -908,11 +910,9 @@ class MainActivity : AppCompatActivity() {
                         Log.d(TAG, "loadHomeSections: no sections, showing empty state")
                         tvStatus.visibility = View.VISIBLE
                         tvStatus.text = getString(R.string.no_playlist)
-                        recyclerSections?.visibility = View.GONE
                     } else {
-                        Log.d(TAG, "loadHomeSections: showing ${sections.size} sections, recyclerSections=${recyclerSections?.visibility}")
+                        Log.d(TAG, "loadHomeSections: showing ${sections.size} sections")
                         tvStatus.visibility = View.GONE
-                        recyclerSections?.visibility = View.VISIBLE
                         homeSectionAdapter.setSections(sections)
                     }
                     progress.visibility = View.GONE
@@ -985,7 +985,7 @@ class MainActivity : AppCompatActivity() {
 
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra("channelId", channel.id)
-            putExtra("channelName", channel.name)
+            putExtra("channelName", channel.cleanName ?: channel.name)
             putExtra("channelLogo", channel.logoUrl)
             putExtra("channelNumber", channel.channelNumber)
             putExtra("streamUrl", channel.streamUrl)
@@ -994,6 +994,8 @@ class MainActivity : AppCompatActivity() {
             putExtra("isPremium", premiumManager.isPremium())
             putExtra("groupTitle", channel.groupTitle ?: currentGroup)
             putExtra("channelType", effectiveType)
+            putExtra("groupId", channel.groupId ?: "")
+            putExtra("channelQuality", channel.qualityBadge ?: "")
         }
         // Add Xtream extras if available
         lifecycleScope.launch(Dispatchers.IO) {
@@ -1019,7 +1021,10 @@ class MainActivity : AppCompatActivity() {
                     if (newFav) getString(R.string.added_favorite) else getString(R.string.removed_favorite),
                     Toast.LENGTH_SHORT
                 ).show()
-                loadHomeSections()
+                // Ne recharger les sections que si on est sur HOME/VOD/SERIES
+                if (currentType != "LIVE") {
+                    loadHomeSections()
+                }
             }
         }
     }

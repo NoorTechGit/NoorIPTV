@@ -35,7 +35,8 @@
             android:name=".PlayerActivity"
             android:theme="@style/PlayerTheme"
             android:screenOrientation="landscape"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            android:supportsPictureInPicture="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize" />
 
         <activity
             android:name=".MovieDetailActivity"

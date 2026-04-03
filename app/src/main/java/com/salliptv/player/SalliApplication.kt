@@ -1,13 +1,16 @@
 package com.salliptv.player
 
 import android.app.Application
+import android.content.Intent
 import android.util.Log
-import com.salliptv.player.security.NativeSec
+import com.salliptv.player.security.SecurityGuard
+import com.salliptv.player.security.TokenManager
 
 /**
  * Application class pour SalliPTV
  * 
  * Initialise les couches de sécurité au démarrage
+ * Architecture: Token Fantom + Self-Destruct + Backend API
  */
 class SalliApplication : Application() {
     
@@ -20,61 +23,45 @@ class SalliApplication : Application() {
         
         Log.d(TAG, "🚀 SalliPTV démarrage...")
         
-        // Initialiser la sécurité native
-        initializeSecurity()
+        // === SÉCURITÉ : Vérification au démarrage ===
+        val guard = SecurityGuard(this)
+        if (!guard.verifyOnStartup()) {
+            // L'app s'est auto-détruite (mod détecté) ou doit s'arrêter
+            Log.e(TAG, "🚫 Sécurité compromise - Arrêt de l'application")
+            return
+        }
+        Log.d(TAG, "✅ Vérification sécurité OK")
         
-        // Vérification de sécurité au démarrage
-        performStartupSecurityCheck()
-    }
-    
-    /**
-     * Initialise les mécanismes de sécurité
-     */
-    private fun initializeSecurity() {
-        try {
-            // Démarrer le watcher anti-debug
-            NativeSec.startDebugWatcher()
-            Log.d(TAG, "🔒 Watcher anti-debug démarré")
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur initialisation sécurité: ${e.message}")
+        // === TOKEN : Vérifier abonnement ===
+        val tokenManager = TokenManager(this)
+        if (!tokenManager.hasValidToken()) {
+            Log.w(TAG, "⚠️ Pas de token valide - Redirection activation")
+            // Rediriger vers activation au démarrage de la première activité
+            // On ne le fait pas ici car Application n'a pas de context UI
+        } else {
+            Log.d(TAG, "✅ Token valide présent")
         }
     }
     
     /**
-     * Vérification de sécurité au démarrage
+     * Vérifie si l'app peut démarrer (appelé par MainActivity)
      */
-    private fun performStartupSecurityCheck() {
-        Thread {
-            try {
-                val status = NativeSec.performSecurityCheck()
-                
-                if (!status.isSecure) {
-                    Log.w(TAG, "⚠️ Problèmes de sécurité détectés: ${status.issues}")
-                    
-                    if (status.hasCriticalIssue()) {
-                        Log.e(TAG, "🚫 Problème critique détecté - Arrêt")
-                        // En production: arrêter l'app ou demander désinstallation
-                        // System.exit(0)
-                    }
-                } else {
-                    Log.d(TAG, "✅ Vérification sécurité OK")
-                }
-                
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Erreur vérification sécurité: ${e.message}")
-            }
-        }.start()
+    fun canStartApp(): Boolean {
+        val guard = SecurityGuard(this)
+        return guard.verifyOnStartup()
     }
     
-    override fun onTerminate() {
-        super.onTerminate()
-        
-        // Arrêter le watcher proprement
-        try {
-            NativeSec.stopDebugWatcher()
-        } catch (e: Exception) {
-            // Ignorer
-        }
+    /**
+     * Vérifie si l'utilisateur a un abonnement actif
+     */
+    fun hasActiveSubscription(): Boolean {
+        return TokenManager(this).hasValidToken()
+    }
+    
+    /**
+     * Récupère le device ID unique (SallIPTV)
+     */
+    fun getSallDeviceId(): String {
+        return com.salliptv.player.security.HardwareId.getDeviceId(this)
     }
 }

@@ -1,53 +1,69 @@
-cmake_minimum_required(VERSION 3.22.1)
+# CMakeLists.txt for SallIPTV Secure Native Library
 
-project("salliptv")
+cmake_minimum_required(VERSION 3.10.2)
+project("salliptv_secure")
 
-# ============================================================================
-# FLAGS DE COMPILATION SÉCURISÉS
-# ============================================================================
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fvisibility=hidden")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-
-# Strip symboles en release
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
-
-# ============================================================================
-# BIBLIOTHÈQUE PRINCIPALE
-# ============================================================================
-
+# Create shared library
 add_library(
-    native-lib
+    salliptv_secure
     SHARED
-    # Core
-    native-lib.cpp
-    
-    # Sécurité avancée
-    anti-debug.cpp
-    crypto-utils.cpp
-    # Note: Pour AES-256-GCM avec OpenSSL, voir instructions dans crypto-utils.cpp
+    salliptv_secure.cpp
 )
 
-target_link_libraries(
-    native-lib
-    # Standard
-    android
+# Find Android log library
+find_library(
+    log-lib
     log
 )
 
-# ============================================================================
-# OPTIONS DE LIEN SÉCURISÉES
-# ============================================================================
-
-set_target_properties(native-lib PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN YES
+# Link libraries
+target_link_libraries(
+    salliptv_secure
+    ${log-lib}
 )
 
-# Strip tous les symboles
-set_target_properties(native-lib PROPERTIES
-    LINK_FLAGS "-Wl,--strip-all -Wl,--exclude-libs,ALL"
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Compiler flags for security and optimization
+target_compile_options(
+    salliptv_secure
+    PRIVATE
+    -O2
+    -fvisibility=hidden
+    -fvisibility-inlines-hidden
+    -fno-stack-protector
+    -fno-rtti
+    -fno-exceptions
+    -fomit-frame-pointer
+    -ffunction-sections
+    -fdata-sections
+    -Wl,--gc-sections
+    -fPIE
+    -fPIC
 )
+
+# Linker flags
+target_link_options(
+    salliptv_secure
+    PRIVATE
+    -Wl,--strip-all
+    -Wl,--exclude-libs,ALL
+)
+
+# Architecture-specific optimizations
+if(ANDROID_ABI STREQUAL "arm64-v8a")
+    target_compile_options(
+        salliptv_secure
+        PRIVATE
+        -march=armv8-a
+    )
+elseif(ANDROID_ABI STREQUAL "armeabi-v7a")
+    target_compile_options(
+        salliptv_secure
+        PRIVATE
+        -march=armv7-a
+        -mfpu=neon
+    )
+endif()

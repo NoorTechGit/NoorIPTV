@@ -140,9 +140,27 @@
         android:background="@drawable/bg_transport_bar"
         android:paddingStart="32dp"
         android:paddingEnd="32dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="28dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="8dp"
         android:visibility="gone">
+
+        <!-- ROW 0: Recent channels strip (top of transport bar) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_channel_strip"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:focusable="true"
+            android:clipToPadding="false"
+            android:paddingBottom="0dp"
+            android:visibility="gone" />
+
+        <!-- Thin separator below recent strip -->
+        <View
+            android:id="@+id/divider_channel_strip"
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="#20FFFFFF"
+            android:visibility="gone" />
 
         <!-- ROW 1: Channel logo + name + LIVE badge + quality badges -->
         <LinearLayout
@@ -155,10 +173,10 @@
             <!-- Channel logo -->
             <ImageView
                 android:id="@+id/iv_channel_logo"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:scaleType="fitCenter"
-                android:layout_marginEnd="14dp" />
+                android:layout_marginEnd="12dp" />
 
             <!-- Channel number badge (e.g. "103") -->
             <TextView
@@ -166,7 +184,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#8E8E93"
-                android:textSize="18sp"
+                android:textSize="14sp"
                 android:fontFamily="sans-serif-light"
                 android:layout_marginEnd="10dp" />
 
@@ -177,7 +195,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -189,7 +207,7 @@
                 android:layout_height="wrap_content"
                 android:text="EN DIRECT"
                 android:textColor="#FFFFFF"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:fontFamily="sans-serif-medium"
                 android:textAllCaps="true"
                 android:background="@drawable/bg_live_badge"
@@ -203,7 +221,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge"
                 android:textColor="#FFFFFF"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:fontFamily="sans-serif-medium"
                 android:layout_marginStart="6dp"
                 android:visibility="gone" />
@@ -214,7 +232,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge"
                 android:textColor="#FFFFFF"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:fontFamily="sans-serif-medium"
                 android:layout_marginStart="4dp"
                 android:visibility="gone" />
@@ -225,65 +243,95 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge"
                 android:textColor="#FFFFFF"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:fontFamily="sans-serif-medium"
                 android:layout_marginStart="4dp"
                 android:visibility="gone" />
+
+            <!-- Quality selector badge (clickable) -->
+            <TextView
+                android:id="@+id/tv_quality_selector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_quality"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginStart="4dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true"
+                android:visibility="gone" />
+
+            <!-- Favourite toggle button in transport bar -->
+            <TextView
+                android:id="@+id/btn_fav_overlay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="♡"
+                android:textColor="#8E8E93"
+                android:textSize="16sp"
+                android:paddingStart="12dp"
+                android:paddingEnd="6dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true" />
         </LinearLayout>
 
-        <!-- ROW 2: Current program name -->
-        <TextView
-            android:id="@+id/tv_now_playing"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#8E8E93"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingBottom="10dp"
-            android:paddingStart="62dp" />
-
-        <!-- ROW 3: Progress bar (thin, 3dp, white on dark gray) -->
+        <!-- ROW 2: Progress bar (thin, 2dp, white on dark gray) -->
         <ProgressBar
             android:id="@+id/pb_program_progress"
             style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
-            android:layout_height="3dp"
+            android:layout_height="2dp"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/progress_epg" />
 
-        <!-- ROW 4: Elapsed time (left) + program time range (right) -->
+        <!-- ROW 3: Elapsed time (left) + program title (center) + duration (right) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingTop="6dp">
+            android:gravity="center_vertical"
+            android:paddingTop="5dp">
 
             <TextView
                 android:id="@+id/tv_program_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#8E8E93"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:fontFamily="sans-serif" />
 
-            <View
+            <TextView
+                android:id="@+id/tv_now_playing"
                 android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#B0FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
 
             <TextView
                 android:id="@+id/tv_program_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#8E8E93"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:fontFamily="sans-serif" />
         </LinearLayout>
 
-        <!-- ROW 5: Program description (2 lines, shown in transport bar) -->
+        <!-- Program description — hidden in transport bar, shown only in info panel -->
         <TextView
             android:id="@+id/tv_program_desc"
             android:layout_width="match_parent"
@@ -294,10 +342,11 @@
             android:maxLines="2"
             android:ellipsize="end"
             android:paddingTop="6dp"
-            android:paddingStart="62dp"
-            android:lineSpacingExtra="2dp" />
+            android:paddingStart="48dp"
+            android:lineSpacingExtra="2dp"
+            android:visibility="gone" />
 
-        <!-- Next program (hidden label below desc) -->
+        <!-- Next program — hidden in transport bar, shown only in info panel -->
         <TextView
             android:id="@+id/tv_next_program"
             android:layout_width="match_parent"
@@ -305,8 +354,9 @@
             android:textColor="#50FFFFFF"
             android:textSize="12sp"
             android:fontFamily="sans-serif"
-            android:paddingStart="62dp"
-            android:paddingTop="4dp" />
+            android:paddingStart="48dp"
+            android:paddingTop="4dp"
+            android:visibility="gone" />
 
         <!-- tv_next_playing: hidden stub so code doesn't crash -->
         <TextView
@@ -375,13 +425,6 @@
                 android:focusable="true"
                 android:focusableInTouchMode="true"                android:clickable="true" />
         </LinearLayout>
-
-        <!-- rv_channel_strip: hidden stub — channel switching is UP/DOWN only -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_channel_strip"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -895,6 +938,40 @@
         android:textSize="32sp"
         android:fontFamily="sans-serif-light"
         android:visibility="gone" />
+
+    <!-- ================================================== -->
+    <!-- KEYBOARD LEGEND (first launch hint)               -->
+    <!-- ================================================== -->
+    <LinearLayout
+        android:id="@+id/overlay_keyboard_legend"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK — Info chaîne\nHaut/Bas — Changer chaîne\nGauche — Liste des chaînes\n0-9 — Accès direct\nRetour — Quitter"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:lineSpacingExtra="8dp"
+            android:fontFamily="sans-serif-light"
+            android:gravity="center"
+            android:padding="40dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Appuyez sur une touche pour continuer"
+            android:textColor="#8E8E93"
+            android:textSize="14sp"
+            android:paddingTop="24dp" />
+    </LinearLayout>
 
     <!-- ================================================== -->
     <!-- TRACK SELECTOR (audio / subtitle popup — centered) -->
