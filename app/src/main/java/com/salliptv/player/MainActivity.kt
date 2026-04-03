@@ -250,6 +250,10 @@ class MainActivity : AppCompatActivity() {
             currentGroup = if (position == 0) null else category // first = "All"
             tvCategoryName.text = category
             loadChannels()
+            // Move focus to channel list
+            rvChannels.postDelayed({
+                if (rvChannels.childCount > 0) rvChannels.getChildAt(0).requestFocus()
+            }, 300)
         }
 
         // Channel click → open PlayerActivity (Apple TV overlay with channel strip, program info, action bar)
@@ -697,6 +701,11 @@ class MainActivity : AppCompatActivity() {
                 channelAdapter.setChannels(channels)
                 tvChannelCount.text = getString(R.string.channels_count, channels.size)
 
+                // Load EPG for all channels in this group (background)
+                if (currentType == "LIVE") {
+                    loadEpgForChannelList(channels)
+                }
+
                 if (channels.isEmpty()) {
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = if (currentType == "VOD" || currentType == "SERIES") {
@@ -947,6 +956,53 @@ class MainActivity : AppCompatActivity() {
             putExtra("playlistId", currentPlaylistId)
             putExtra("title", section.title)
         })
+    }
+
+    private val epgCache = mutableMapOf<String, String>() // channelName → current program title
+
+    private fun loadEpgForChannelList(channels: List<Channel>) {
+        val client = okhttp3.OkHttpClient.Builder()
+            .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis() / 1000
+            for (ch in channels) {
+                val name = ch.cleanName ?: ch.name ?: continue
+                if (epgCache.containsKey(name)) continue // Already cached
+
+                try {
+                    val url = "https://salliptv.com/api/epg/by-name/${java.net.URLEncoder.encode(name, "UTF-8")}"
+                    val response = client.newCall(okhttp3.Request.Builder().url(url).build()).execute()
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: continue
+                        val json = com.google.gson.JsonParser.parseString(body).asJsonObject
+                        val programs = json.getAsJsonArray("programs") ?: continue
+                        for (p in programs) {
+                            val prog = p.asJsonObject
+                            val start = prog.get("start")?.asLong ?: continue
+                            val end = prog.get("end")?.asLong ?: continue
+                            if (start <= now && end >= now) {
+                                epgCache[name] = prog.get("title")?.asString ?: ""
+                                break
+                            }
+                        }
+                        if (!epgCache.containsKey(name)) epgCache[name] = "" // No current program
+                    }
+                } catch (_: Exception) {}
+            }
+
+            // Push EPG into adapter and refresh
+            withContext(Dispatchers.Main) {
+                for ((name, title) in epgCache) {
+                    if (title.isNotEmpty()) {
+                        channelAdapter.updateEpg(name, title)
+                    }
+                }
+                channelAdapter.refreshEpgViews()
+            }
+        }
     }
 
     private fun cleanGroupName(name: String): String {

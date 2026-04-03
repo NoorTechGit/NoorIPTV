@@ -10,6 +10,7 @@
     android:focusableInTouchMode="true"
     android:clickable="true"
     android:stateListAnimator="@animator/card_focus_animator"
+    android:transformPivotX="0dp"
     android:background="@android:color/transparent">
 
     <!-- Channel number -->
@@ -79,7 +80,7 @@
     <View
         android:layout_width="1dp"
         android:layout_height="28dp"
-        android:background="#0A1628"
+        android:background="#28FFFFFF"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp" />
 
@@ -89,7 +90,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="4"
-        android:textColor="#506880"
+        android:textColor="#8E8E93"
         android:textSize="12sp"
         android:fontFamily="sans-serif"
         android:maxLines="1"

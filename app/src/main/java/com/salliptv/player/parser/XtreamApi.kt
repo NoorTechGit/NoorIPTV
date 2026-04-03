@@ -50,6 +50,11 @@ class XtreamApi(
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(retryInterceptor)
+        .addInterceptor { chain ->
+            chain.proceed(chain.request().newBuilder()
+                .header("User-Agent", "VLC/3.0.18 LibVLC/3.0.18")
+                .build())
+        }
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()

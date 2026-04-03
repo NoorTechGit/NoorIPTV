@@ -60,13 +60,13 @@ class CategoryAdapter(
         applySelectionState(holder, isSelected)
 
         holder.itemView.setOnFocusChangeListener { v, hasFocus ->
-            v.animate()
-                .scaleX(if (hasFocus) 1.06f else 1f)
-                .scaleY(if (hasFocus) 1.06f else 1f)
-                .translationZ(if (hasFocus) 6f else 0f)
-                .setDuration(200)
-                .setInterpolator(DecelerateInterpolator())
-                .start()
+            if (hasFocus) {
+                v.setBackgroundColor(0x30FFFFFF)
+                holder.tvName.setTextColor(Color.WHITE)
+                holder.tvCount.setTextColor(0xCCFFFFFF.toInt())
+            } else {
+                applySelectionState(holder, position == selectedPosition)
+            }
         }
 
         holder.itemView.setOnClickListener {
@@ -77,13 +77,13 @@ class CategoryAdapter(
 
     private fun applySelectionState(holder: ViewHolder, isSelected: Boolean) {
         if (isSelected) {
-            holder.itemView.setBackgroundColor(0x33FFFFFF)
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
             holder.tvName.setTextColor(Color.WHITE)
-            holder.tvCount.setTextColor(0xCCFFFFFF.toInt())
+            holder.tvCount.setTextColor(0xAAFFFFFF.toInt())
         } else {
             holder.itemView.setBackgroundColor(Color.TRANSPARENT)
-            holder.tvName.setTextColor(0xFF8E8E93.toInt())
-            holder.tvCount.setTextColor(0xFF5E5E63.toInt())
+            holder.tvName.setTextColor(0xFF6E6E73.toInt())
+            holder.tvCount.setTextColor(0xFF48484A.toInt())
         }
     }
 

@@ -37,6 +37,16 @@ class ChannelAdapter(
 
     fun setOnChannelClickListener(listener: (Channel, Int) -> Unit) { onItemClick = listener }
     fun setOnChannelLongClickListener(listener: (Channel, Int) -> Unit) { onItemLongClick = listener }
+
+    private val epgMap = mutableMapOf<String, String>()
+
+    fun updateEpg(channelName: String, programTitle: String) {
+        epgMap[channelName.lowercase()] = programTitle
+    }
+
+    fun refreshEpgViews() {
+        notifyDataSetChanged()
+    }
     fun setOnChannelFocusListener(listener: (Channel, Int) -> Unit) { onItemFocus = listener }
 
     private var selectedPosition: Int = -1
@@ -176,12 +186,15 @@ class ChannelAdapter(
             setTextColor(0xFF0A84FF.toInt())
         }
 
-        holder.itemView.setBackgroundColor(if (isSelected) 0x20FFFFFF else Color.TRANSPARENT)
-        holder.tvName.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
-        holder.tvNumber?.setTextColor(if (isSelected) 0xFF0A84FF.toInt() else 0xFF8E8E93.toInt())
+        holder.itemView.setBackgroundColor(if (isSelected) 0x15FFFFFF else Color.TRANSPARENT)
+        holder.tvName.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFFB0B0B5.toInt())
+        holder.tvNumber?.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFF6E6E73.toInt())
         holder.tvEpg?.apply {
             if (channel.type == "LIVE") {
                 visibility = View.VISIBLE
+                val name = (channel.cleanName ?: channel.name ?: "").lowercase()
+                val epg = epgMap[name]
+                text = epg ?: ""
                 setTextColor(if (isSelected) 0xAAFFFFFF.toInt() else 0xFF8E8E93.toInt())
             } else {
                 visibility = View.GONE
@@ -189,13 +202,15 @@ class ChannelAdapter(
         }
 
         holder.itemView.setOnFocusChangeListener { v, hasFocus ->
-            v.animate()
-                .scaleX(if (hasFocus) 1.05f else 1f)
-                .scaleY(if (hasFocus) 1.05f else 1f)
-                .translationZ(if (hasFocus) 6f else 0f)
-                .setDuration(200)
-                .setInterpolator(DecelerateInterpolator())
-                .start()
+            if (hasFocus) {
+                v.setBackgroundColor(0x30FFFFFF)
+                holder.tvName.setTextColor(Color.WHITE)
+                holder.tvNumber?.setTextColor(Color.WHITE)
+            } else {
+                v.setBackgroundColor(if (isSelected) 0x15FFFFFF else Color.TRANSPARENT)
+                holder.tvName.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFFB0B0B5.toInt())
+                holder.tvNumber?.setTextColor(if (isSelected) 0xFFFFFFFF.toInt() else 0xFF6E6E73.toInt())
+            }
             if (hasFocus) onItemFocus(channel, position)
         }
     }
