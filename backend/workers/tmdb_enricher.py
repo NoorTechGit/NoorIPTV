@@ -248,6 +248,75 @@ def _apply_metadata(ch: Dict, meta: Dict):
             ch[key] = meta[key]
 
 
+def search_channel_logo(channel_name: str) -> Optional[str]:
+    """
+    Search for HD logo of a TV channel via TMDB TV search.
+    Returns poster/logo URL or None.
+    """
+    if not TMDB_API_KEY or TMDB_API_KEY.startswith("your_"):
+        return None
+
+    clean = normalize_title(channel_name)
+    if not clean or len(clean) < 2:
+        return None
+
+    try:
+        with httpx.Client(timeout=10) as client:
+            # Search TMDB for TV network/channel
+            resp = client.get(f"{TMDB_BASE}/search/tv", params={
+                "api_key": TMDB_API_KEY,
+                "query": clean,
+                "language": "fr-FR",
+            })
+            if resp.status_code == 200:
+                results = resp.json().get("results", [])
+                if results:
+                    logo = results[0].get("poster_path")
+                    if logo:
+                        return f"{TMDB_IMAGE_BASE}/w200{logo}"
+
+            # Try searching as a company/network
+            resp2 = client.get(f"{TMDB_BASE}/search/company", params={
+                "api_key": TMDB_API_KEY,
+                "query": clean,
+            })
+            if resp2.status_code == 200:
+                results = resp2.json().get("results", [])
+                if results:
+                    logo = results[0].get("logo_path")
+                    if logo:
+                        return f"{TMDB_IMAGE_BASE}/w200{logo}"
+    except Exception:
+        pass
+
+    return None
+
+
+def enrich_live_channel_logos(channels: List[Dict]) -> List[Dict]:
+    """
+    Enrich live channel logos from cache. No API calls — cache only.
+    Use continue_logo_enrichment task for API calls.
+    """
+    r = get_redis()
+    hits = 0
+    for ch in channels:
+        name = normalize_title(ch.get("name", ""))
+        if not name or len(name) < 2:
+            continue
+        key = f"logo:{name.lower()}"
+        if r:
+            try:
+                url = r.get(key)
+                if url and url != "none":
+                    ch["logo_hd"] = url
+                    hits += 1
+            except Exception:
+                pass
+    if hits > 0:
+        logger.info(f"Logo cache: {hits}/{len(channels)} HD logos applied")
+    return channels
+
+
 def enrich_channels(channels: List[Dict], media_type: str, update_fn=None) -> List[Dict]:
     """
     Enrich a list of channels with TMDB metadata.

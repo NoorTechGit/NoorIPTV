@@ -33,13 +33,23 @@ celery_app.conf.update(
     task_routes={
         "workers.parse_worker.process_playlist": {"queue": "parsing"},
         "workers.parse_worker.enrich_tmdb_background": {"queue": "ml"},
+        "workers.parse_worker.continue_tmdb_enrichment": {"queue": "ml"},
+        "workers.parse_worker.enrich_logos_background": {"queue": "ml"},
         "workers.epg_worker.refresh_epg_task": {"queue": "ml"},
         "workers.ml_worker.*": {"queue": "ml"},
     },
     beat_schedule={
-        "refresh-epg-daily": {
+        "refresh-epg": {
             "task": "workers.epg_worker.refresh_epg_task",
             "schedule": 6 * 3600,  # Every 6 hours
+        },
+        "continue-tmdb-enrichment": {
+            "task": "workers.parse_worker.continue_tmdb_enrichment",
+            "schedule": 300,  # Every 5 minutes
+        },
+        "enrich-channel-logos": {
+            "task": "workers.parse_worker.enrich_logos_background",
+            "schedule": 600,  # Every 10 minutes
         },
     },
     # Result expiration

@@ -403,8 +403,13 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
         result_file = None
         if job_id:
             result_path = str(UPLOAD_DIR / f"{job_id}_result.json.gz")
-            # Deduplicate live channels (TF1 HD + TF1 FHD → one TF1)
+            # Deduplicate live channels + apply HD logos from cache
             live_deduped = dedup_live_channels(parsed["channels"])
+            try:
+                from workers.tmdb_enricher import enrich_live_channel_logos
+                live_deduped = enrich_live_channel_logos(live_deduped)
+            except Exception:
+                pass
             live = [dict(ch, type="LIVE") for ch in live_deduped]
             vod_list = [dict(ch, type="VOD") for ch in vod_enriched]
 
@@ -491,3 +496,140 @@ def enrich_tmdb_background(self, vod_names, series_names):
         logger.info("Background TMDB enrichment completed")
     except Exception as e:
         logger.error(f"Background TMDB error: {e}")
+
+
+@shared_task(bind=True, max_retries=0)
+def continue_tmdb_enrichment(self):
+    """
+    Continuous TMDB enrichment — runs every 5 min via beat.
+    Finds uncached titles from the latest result file and enriches a batch.
+    Stops when all titles are cached.
+    """
+    try:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        from workers.tmdb_enricher import enrich_channels, get_db
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        # Count uncached titles
+        cur.execute("SELECT COUNT(*) as cnt FROM tmdb_cache WHERE tmdb_id IS NULL AND poster_path IS NULL")
+        uncached_misses = cur.fetchone()["cnt"]
+        cur.execute("SELECT COUNT(*) as cnt FROM tmdb_cache")
+        total_cached = cur.fetchone()["cnt"]
+        conn.close()
+
+        # Find latest result file to get fresh titles
+        result_files = sorted(UPLOAD_DIR.glob("*_result.json.gz"), key=lambda f: f.stat().st_mtime, reverse=True)
+        if not result_files:
+            return {"status": "no_result_files"}
+
+        latest = result_files[0]
+
+        # Read uncached titles from result
+        import gzip as gz
+        titles_to_enrich = []
+        with gz.open(str(latest), 'rt', encoding='utf-8', errors='ignore') as f:
+            import json as j
+            data = j.load(f)
+            # Get VOD and SERIES names not yet in cache
+            conn2 = get_db()
+            cur2 = conn2.cursor()
+            for ch in data:
+                if ch.get("type") not in ("VOD", "SERIES"):
+                    continue
+                name = ch.get("name", "")
+                if not name:
+                    continue
+                from workers.tmdb_enricher import normalize_title
+                normalized = normalize_title(name).lower().strip()
+                if not normalized or len(normalized) < 2:
+                    continue
+                media = "series" if ch.get("type") == "SERIES" else "movie"
+                cur2.execute(
+                    "SELECT 1 FROM tmdb_cache WHERE title_normalized = %s AND media_type = %s",
+                    (normalized, media)
+                )
+                if not cur2.fetchone():
+                    titles_to_enrich.append({"name": name, "type": media})
+            conn2.close()
+
+        if not titles_to_enrich:
+            logger.info(f"TMDB enrichment complete — all titles cached ({total_cached} total)")
+            return {"status": "complete", "total_cached": total_cached}
+
+        # Enrich a batch of 500
+        batch = titles_to_enrich[:500]
+        vod_batch = [t for t in batch if t["type"] == "movie"]
+        series_batch = [t for t in batch if t["type"] == "series"]
+
+        logger.info(f"Continuing TMDB enrichment: {len(vod_batch)} VOD + {len(series_batch)} series (remaining: {len(titles_to_enrich)})")
+
+        if vod_batch:
+            enrich_channels([{"name": t["name"]} for t in vod_batch], "movie")
+        if series_batch:
+            enrich_channels([{"name": t["name"]} for t in series_batch], "series")
+
+        return {"status": "enriched", "batch": len(batch), "remaining": len(titles_to_enrich) - len(batch)}
+
+    except Exception as e:
+        logger.error(f"Continue TMDB enrichment error: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@shared_task(bind=True, max_retries=0)
+def enrich_logos_background(self):
+    """
+    Background task: find HD logos for live channels via TMDB.
+    Runs periodically via beat. Caches in Redis.
+    """
+    try:
+        import gzip as gz
+        from workers.tmdb_enricher import search_channel_logo, normalize_title, get_redis
+        import time as t
+
+        r = get_redis()
+        if not r:
+            return {"status": "no_redis"}
+
+        # Find latest result file
+        result_files = sorted(UPLOAD_DIR.glob("*_result.json.gz"), key=lambda f: f.stat().st_mtime, reverse=True)
+        if not result_files:
+            return {"status": "no_result_files"}
+
+        # Get unique live channel names not yet cached
+        with gz.open(str(result_files[0]), 'rt', encoding='utf-8', errors='ignore') as f:
+            data = json.load(f)
+
+        live_names = set()
+        for ch in data:
+            if ch.get("type") == "LIVE":
+                name = normalize_title(ch.get("name", "")).lower().strip()
+                if name and len(name) >= 2:
+                    # Check if already cached
+                    if not r.exists(f"logo:{name}"):
+                        live_names.add(name)
+
+        if not live_names:
+            logger.info("All live channel logos are cached")
+            return {"status": "complete"}
+
+        # Enrich batch of 100
+        batch = list(live_names)[:100]
+        found = 0
+        for name in batch:
+            logo_url = search_channel_logo(name)
+            if logo_url:
+                r.setex(f"logo:{name}", 30 * 86400, logo_url)
+                found += 1
+            else:
+                r.setex(f"logo:{name}", 7 * 86400, "none")  # Cache miss for 7 days
+            t.sleep(0.05)  # Rate limit
+
+        logger.info(f"Logo enrichment: {found}/{len(batch)} found, {len(live_names) - len(batch)} remaining")
+        return {"status": "enriched", "found": found, "batch": len(batch), "remaining": len(live_names) - len(batch)}
+
+    except Exception as e:
+        logger.error(f"Logo enrichment error: {e}")
+        return {"status": "error", "error": str(e)}

@@ -254,6 +254,7 @@ class PlaylistManager(
                         "name" -> ch.name = reader.nextString()
                         "clean_name" -> ch.cleanName = reader.nextString()
                         "logo" -> ch.logoUrl = reader.nextString()
+                        "logo_hd" -> ch.logoUrl = reader.nextString() // HD logo overrides provider logo
                         "category" -> ch.groupTitle = reader.nextString()
                         "url" -> ch.streamUrl = reader.nextString()
                         "type" -> ch.type = reader.nextString()

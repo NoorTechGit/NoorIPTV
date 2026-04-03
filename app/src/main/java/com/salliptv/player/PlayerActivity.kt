@@ -1996,14 +1996,31 @@ class PlayerActivity : AppCompatActivity() {
             h.tvName.setTextColor(if (isPlaying) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
             h.tvNum.setTextColor(if (isPlaying) 0xFF40D4FF.toInt() else 0xFF8E8E93.toInt())
 
+            // Load EPG for this channel (async, from backend)
+            h.tvEpg.text = ""
+            val channelName = ch.cleanName ?: ch.name ?: ""
+            if (channelName.isNotEmpty()) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val programs = loadEpgFromBackend(channelName)
+                        val now = System.currentTimeMillis() / 1000
+                        val current = programs.firstOrNull { it.startTime <= now && it.endTime >= now }
+                        withContext(Dispatchers.Main) {
+                            h.tvEpg.text = current?.title ?: ""
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+
+            // Focus: visible background change
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
-                v.animate()
-                    .scaleX(if (hasFocus) 1.05f else 1f)
-                    .scaleY(if (hasFocus) 1.05f else 1f)
-                    .translationZ(if (hasFocus) 6f else 0f)
-                    .setDuration(200)
-                    .setInterpolator(DecelerateInterpolator())
-                    .start()
+                if (hasFocus) {
+                    v.setBackgroundColor(0x60FFFFFF)
+                    h.tvName.setTextColor(0xFFFFFFFF.toInt())
+                } else {
+                    v.setBackgroundColor(if (isPlaying) 0x400A84FF else Color.TRANSPARENT)
+                    h.tvName.setTextColor(if (isPlaying) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
+                }
             }
             h.itemView.setOnClickListener { onOverlayChannelSelected(position) }
         }
