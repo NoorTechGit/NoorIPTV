@@ -335,7 +335,7 @@
                 android:id="@+id/rv_channels"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:nextFocusUp="@id/tab_live_vis"
+                android:nextFocusUp="@id/rv_channels"
                 android:layout_weight="1"
                 android:paddingTop="8dp"
                 android:paddingBottom="16dp"
