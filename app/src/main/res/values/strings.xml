@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NoorIPTV</string>
+    <string name="app_name">AURA</string>
 
     <!-- Tabs -->
     <string name="tab_home">Accueil</string>
@@ -49,7 +49,7 @@
     <string name="catchup_playing">Catch-up: %s</string>
 
     <!-- Premium -->
-    <string name="premium_title">NoorIPTV Pro</string>
+    <string name="premium_title">AURA Pro</string>
     <string name="premium_subtitle">Unlock all features</string>
     <string name="premium_feature_playlists">Unlimited playlists</string>
     <string name="premium_feature_epg">Live EPG guide</string>

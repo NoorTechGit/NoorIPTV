@@ -253,44 +253,54 @@ def _apply_metadata(ch: Dict, meta: Dict):
             ch[key] = meta[key]
 
 
-def search_channel_logo(channel_name: str) -> Optional[str]:
-    """
-    Search for HD logo of a TV channel via TMDB TV search.
-    Returns poster/logo URL or None.
-    """
-    if not TMDB_API_KEY or TMDB_API_KEY.startswith("your_"):
-        return None
+LOGO_BASE = "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries"
 
+# Map common country prefixes to logo country codes/folders
+COUNTRY_MAP = {
+    "FR": ("france", "fr"), "EN": ("united-kingdom", "uk"), "UK": ("united-kingdom", "uk"),
+    "DE": ("germany", "de"), "ES": ("spain", "es"), "IT": ("italy", "it"),
+    "PT": ("portugal", "pt"), "NL": ("netherlands", "nl"), "BE": ("belgium", "be"),
+    "TR": ("turkey", "tr"), "PL": ("poland", "pl"), "RO": ("romania", "ro"),
+    "RU": ("russia", "ru"), "GR": ("greece", "gr"), "US": ("united-states", "us"),
+    "CA": ("canada", "ca"), "AU": ("australia", "au"), "BR": ("brazil", "br"),
+    "AR": ("argentina", "ar"), "IN": ("india", "in"), "CH": ("switzerland", "ch"),
+    "AT": ("austria", "at"), "SE": ("sweden", "se"), "DK": ("denmark", "dk"),
+    "NO": ("norway", "no"), "FI": ("finland", "fi"), "CZ": ("czech-republic", "cz"),
+}
+
+
+def search_channel_logo(channel_name: str, lang: str = None) -> Optional[str]:
+    """
+    Search for HD logo of a TV channel from tv-logo/tv-logos GitHub repo.
+    512px PNGs with transparent background.
+    """
     clean = normalize_title(channel_name)
     if not clean or len(clean) < 2:
         return None
 
-    try:
-        with httpx.Client(timeout=10) as client:
-            # Search TMDB for TV network/channel
-            resp = client.get(f"{TMDB_BASE}/search/tv", params={
-                "api_key": TMDB_API_KEY,
-                "query": clean,
-                "language": "fr-FR",
-            })
-            if resp.status_code == 200:
-                results = resp.json().get("results", [])
-                if results:
-                    logo = results[0].get("poster_path")
-                    if logo:
-                        return f"{TMDB_IMAGE_BASE}/w200{logo}"
+    # Build slug: "TF1" → "tf1", "France 2" → "france-2", "BFM TV" → "bfm-tv"
+    slug = re.sub(r'[^a-z0-9\s-]', '', clean.lower())
+    slug = re.sub(r'\s+', '-', slug).strip('-')
+    if not slug:
+        return None
 
-            # Try searching as a company/network
-            resp2 = client.get(f"{TMDB_BASE}/search/company", params={
-                "api_key": TMDB_API_KEY,
-                "query": clean,
-            })
-            if resp2.status_code == 200:
-                results = resp2.json().get("results", [])
-                if results:
-                    logo = results[0].get("logo_path")
-                    if logo:
-                        return f"{TMDB_IMAGE_BASE}/w200{logo}"
+    # Determine country from lang or try common ones
+    countries_to_try = []
+    if lang and lang.upper() in COUNTRY_MAP:
+        countries_to_try.append(COUNTRY_MAP[lang.upper()])
+    # Always try FR and UK as common fallbacks
+    countries_to_try.extend([("france", "fr"), ("united-kingdom", "uk"), ("germany", "de")])
+    # Deduplicate
+    seen = set()
+    countries_to_try = [c for c in countries_to_try if c not in seen and not seen.add(c)]
+
+    try:
+        with httpx.Client(timeout=5, follow_redirects=True) as client:
+            for country_folder, country_code in countries_to_try:
+                url = f"{LOGO_BASE}/{country_folder}/{slug}-{country_code}.png"
+                resp = client.head(url)
+                if resp.status_code == 200:
+                    return url
     except Exception:
         pass
 

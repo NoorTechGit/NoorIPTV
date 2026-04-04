@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:drawable="@drawable/ic_aura_halo">
+
+    <!-- Animate main ring -->
+    <target android:name="halo_path">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:valueFrom="0"
+                android:valueTo="0.85"
+                android:duration="800"
+                android:interpolator="@android:anim/decelerate_interpolator" />
+        </aapt:attr>
+    </target>
+
+    <!-- Animate glow ring (same timing) -->
+    <target android:name="halo_glow">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:valueFrom="0"
+                android:valueTo="0.85"
+                android:duration="800"
+                android:interpolator="@android:anim/decelerate_interpolator" />
+        </aapt:attr>
+    </target>
+</animated-vector>
