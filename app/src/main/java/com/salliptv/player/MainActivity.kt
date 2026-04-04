@@ -247,9 +247,25 @@ class MainActivity : AppCompatActivity() {
 
         // Category click
         categoryAdapter.setOnCategoryClickListener { category, position ->
-            currentGroup = if (position == 0) null else category // first = "All"
-            tvCategoryName.text = category
-            loadChannels()
+            if (category.startsWith("★")) {
+                // Favorites pseudo-category
+                currentGroup = null
+                tvCategoryName.text = getString(R.string.tab_favorites)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    val favs = db.channelDao().getFavorites(currentPlaylistId)
+                    withContext(Dispatchers.Main) {
+                        channelAdapter.setChannels(favs)
+                        tvChannelCount.text = getString(R.string.channels_count, favs.size)
+                        progress.visibility = View.GONE
+                        tvStatus.visibility = if (favs.isEmpty()) View.VISIBLE else View.GONE
+                        if (tvStatus.visibility == View.VISIBLE) tvStatus.text = getString(R.string.no_channels)
+                    }
+                }
+            } else {
+                currentGroup = if (position == 0) null else category // first = "All"
+                tvCategoryName.text = category
+                loadChannels()
+            }
             // Move focus to channel list
             rvChannels.postDelayed({
                 if (rvChannels.childCount > 0) rvChannels.getChildAt(0).requestFocus()
@@ -676,6 +692,13 @@ class MainActivity : AppCompatActivity() {
             }
             counts.add(0, totalCount)
 
+            // Add Favorites as second group (after "All Channels")
+            val favCount = db.channelDao().getFavorites(currentPlaylistId).size
+            if (favCount > 0) {
+                allGroups.add(1, "★ Favoris")
+                counts.add(1, favCount)
+            }
+
             withContext(Dispatchers.Main) {
                 categoryAdapter.setCategories(allGroups, counts)
                 rvCategories.visibility = View.VISIBLE
@@ -908,13 +931,15 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     "SERIES" -> {
-                        val groupCounts = db.channelDao().getGroupsWithCountsLimited(currentPlaylistId, "SERIES", 100)
+                        Log.d(TAG, "loadHomeSections: loading SERIES groups...")
+                        val groupCounts = db.channelDao().getGroupsWithCountsLimited(currentPlaylistId, "SERIES", 30)
+                        Log.d(TAG, "loadHomeSections: found ${groupCounts.size} SERIES groups")
                         for (gc in groupCounts) {
-                            val channels = db.channelDao().getByGroupLimited(currentPlaylistId, gc.groupTitle, "SERIES", 30)
+                            val channels = db.channelDao().getByGroupLimited(currentPlaylistId, gc.groupTitle, "SERIES", 15)
                             if (channels.isNotEmpty()) {
                                 sections.add(HomeSection(cleanGroupName(gc.groupTitle), channels, SectionType.SERIES, groupName = gc.groupTitle, totalCount = gc.cnt))
                             }
-                            if (sections.size > 20) break
+                            if (sections.size > 15) break
                         }
                     }
                 }

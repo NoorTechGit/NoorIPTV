@@ -751,6 +751,16 @@ class PlayerActivity : AppCompatActivity() {
                 db.channelDao().updateFavorite(ch.id, ch.isFavorite)
             }
         }
+        btnFavOverlay?.setOnFocusChangeListener { v, hasFocus ->
+            v.setBackgroundColor(if (hasFocus) 0x40FFFFFF else 0x00000000)
+        }
+
+        // Quality selector focus
+        val qualBadge = findViewById<TextView>(R.id.tv_quality_selector)
+        qualBadge?.setOnFocusChangeListener { v, hasFocus ->
+            v.setBackgroundColor(if (hasFocus) 0x60FFFFFF else 0x33FFFFFF)
+            (v as TextView).setTextColor(if (hasFocus) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+        }
 
         // Load recent channels for the strip (exclude current)
         lifecycleScope.launch(Dispatchers.IO) {
@@ -771,8 +781,15 @@ class PlayerActivity : AppCompatActivity() {
                             isFocusableInTouchMode = true
                             isClickable = true
                             setOnClickListener {
-                                val idx = channelList.indexOfFirst { c -> c.id == ch.id }
-                                if (idx >= 0) { hideFullOverlay(); switchToChannel(idx) }
+                                // Play directly — don't search in channelList (recent may be from other groups)
+                                hideFullOverlay()
+                                currentChannelId = ch.id
+                                currentStreamId = ch.streamId
+                                currentChannelName = ch.cleanName ?: ch.name
+                                currentChannelLogo = ch.logoUrl
+                                currentStreamUrl = ch.streamUrl
+                                playStream(ch.streamUrl, currentChannelName, ch.logoUrl, ch.channelNumber)
+                                loadAlternativeStreams()
                             }
                             setOnFocusChangeListener { v, hasFocus ->
                                 v.animate()
@@ -1466,40 +1483,48 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        val anchor = findViewById<View>(R.id.tv_quality_selector) ?: return
+        // Dismiss old popup if it exists
+        qualityPopup?.dismiss()
+        qualityPopup = null
 
-        // Build compact quality pills
+        val trackSelector = overlayTrackSelector
+        tvTrackTitle.text = "Qualité"
+
         val sortedVariants = allQualityVariants.sortedByDescending {
             when (it.qualityBadge) { "4K" -> 5; "FHD" -> 4; "HD" -> 3; "SD" -> 1; else -> 0 }
         }
 
-        val container = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            setPadding(12, 8, 12, 8)
-            setBackgroundColor(0xE6181818.toInt())
-        }
+        rvTracks.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvTracks.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            inner class QVH(val tv: TextView) : RecyclerView.ViewHolder(tv)
 
-        for (ch in sortedVariants) {
-            val label = ch.qualityBadge ?: "Auto"
-            val isCurrent = ch.id == currentChannelId
-            val pill = TextView(this).apply {
-                text = label
-                textSize = 13f
-                setTextColor(if (isCurrent) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
-                setBackgroundColor(if (isCurrent) 0xFF0A84FF.toInt() else 0x33FFFFFF.toInt())
-                setPadding(20, 8, 20, 8)
-                val lp = android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.marginEnd = 8
-                layoutParams = lp
-                isFocusable = true
-                isFocusableInTouchMode = true
-                isClickable = true
-                setOnClickListener {
-                    qualityPopup?.dismiss()
-                    qualityPopup = null
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                val tv = TextView(this@PlayerActivity).apply {
+                    textSize = 15f
+                    setPadding(24, 14, 24, 14)
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                    isClickable = true
+                }
+                return QVH(tv)
+            }
+
+            override fun getItemCount() = sortedVariants.size
+
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val ch = sortedVariants[position]
+                val vh = holder as QVH
+                val label = ch.qualityBadge ?: "Auto"
+                val isCurrent = ch.id == currentChannelId
+                vh.tv.text = if (isCurrent) "$label  ●" else label
+                vh.tv.setTextColor(if (isCurrent) Color.WHITE else 0xFFB0B0B5.toInt())
+
+                vh.tv.setOnFocusChangeListener { v, hasFocus ->
+                    v.setBackgroundColor(if (hasFocus) 0x40FFFFFF else Color.TRANSPARENT)
+                    (v as TextView).setTextColor(if (hasFocus) Color.WHITE else if (isCurrent) Color.WHITE else 0xFFB0B0B5.toInt())
+                }
+
+                vh.tv.setOnClickListener {
                     if (!isCurrent) {
                         isFallingBack = false
                         currentChannelId = ch.id
@@ -1514,34 +1539,26 @@ class PlayerActivity : AppCompatActivity() {
                         alternativeStreams.addAll(allQualityVariants.filter { it.id != currentChannelId })
                         updateQualityBadge()
                     }
-                }
-                setOnFocusChangeListener { v, hasFocus ->
-                    v.animate()
-                        .scaleX(if (hasFocus) 1.06f else 1f)
-                        .scaleY(if (hasFocus) 1.06f else 1f)
-                        .translationZ(if (hasFocus) 8f else 0f)
-                        .setDuration(200)
-                        .setInterpolator(DecelerateInterpolator())
-                        .start()
+                    hideTrackSelector()
                 }
             }
-            container.addView(pill)
         }
 
-        qualityPopup = android.widget.PopupWindow(
-            container,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            true
-        ).apply {
-            isOutsideTouchable = true
-            elevation = 16f
-            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0x00000000))
-            showAsDropDown(anchor, 0, -anchor.height - 60)
-        }
+        isTrackSelectorVisible = true
+        trackSelector.visibility = View.VISIBLE
+        trackSelector.alpha = 0f
+        trackSelector.scaleX = 0.9f
+        trackSelector.scaleY = 0.9f
+        trackSelector.animate()
+            .alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(200)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+        // DON'T hide overlay — keep it visible behind
 
-        // Focus first pill
-        container.post { container.getChildAt(0)?.requestFocus() }
+        rvTracks.post {
+            rvTracks.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+        }
     }
 
     private fun playStream(url: String?, name: String?, logo: String?, number: Int) {
@@ -1645,14 +1662,19 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 KeyEvent.KEYCODE_DPAD_DOWN -> {
                     // First DOWN: focus recent channels strip
-                    // Second DOWN: show info panel
+                    // Second DOWN: focus quality selector or fav button (if visible)
+                    // Third DOWN: show info panel
                     val strip = rvChannelStrip
                     val infoPanel = findViewById<View?>(R.id.overlay_info_panel)
+                    val qualitySelector = findViewById<View?>(R.id.tv_quality_selector)
 
                     if (strip.visibility == View.VISIBLE && !strip.hasFocus()) {
                         // Focus the recent channels strip
                         strip.requestFocus()
                         strip.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                    } else if (qualitySelector != null && qualitySelector.visibility == View.VISIBLE && !qualitySelector.hasFocus()) {
+                        // Focus quality selector button
+                        qualitySelector.requestFocus()
                     } else if (infoPanel != null && infoPanel.visibility != View.VISIBLE) {
                         infoPanel.visibility = View.VISIBLE
                         // Populate EPG timeline
@@ -1992,34 +2014,45 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             val isPlaying = position == playingPosition
-            h.itemView.setBackgroundColor(if (isPlaying) 0x400A84FF else Color.TRANSPARENT)
-            h.tvName.setTextColor(if (isPlaying) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
-            h.tvNum.setTextColor(if (isPlaying) 0xFF40D4FF.toInt() else 0xFF8E8E93.toInt())
+            h.itemView.setBackgroundColor(if (isPlaying) 0x15FFFFFF else Color.TRANSPARENT)
+            h.tvName.setTextColor(if (isPlaying) Color.WHITE else 0xFFB0B0B5.toInt())
+            h.tvNum.setTextColor(if (isPlaying) Color.WHITE else 0xFF6E6E73.toInt())
 
-            // Load EPG for this channel (async, from backend)
+            // Load EPG (backend first, then Xtream fallback)
             h.tvEpg.text = ""
             val channelName = ch.cleanName ?: ch.name ?: ""
             if (channelName.isNotEmpty()) {
                 lifecycleScope.launch(Dispatchers.IO) {
+                    val now = System.currentTimeMillis() / 1000
+                    var title: String? = null
+
+                    // Try backend
                     try {
                         val programs = loadEpgFromBackend(channelName)
-                        val now = System.currentTimeMillis() / 1000
-                        val current = programs.firstOrNull { it.startTime <= now && it.endTime >= now }
-                        withContext(Dispatchers.Main) {
-                            h.tvEpg.text = current?.title ?: ""
-                        }
+                        title = programs.firstOrNull { it.startTime <= now && it.endTime >= now }?.title
                     } catch (_: Exception) {}
+
+                    // Try Xtream
+                    if (title == null && isXtream && xtreamApi != null && ch.streamId > 0) {
+                        try {
+                            val programs = xtreamApi!!.getEpg(ch.streamId)
+                            title = programs.firstOrNull { it.startTime <= now && it.endTime >= now }?.title
+                        } catch (_: Exception) {}
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        h.tvEpg.text = title ?: ""
+                    }
                 }
             }
 
-            // Focus: visible background change
             h.itemView.setOnFocusChangeListener { v, hasFocus ->
                 if (hasFocus) {
-                    v.setBackgroundColor(0x60FFFFFF)
-                    h.tvName.setTextColor(0xFFFFFFFF.toInt())
+                    v.setBackgroundColor(0x30FFFFFF)
+                    h.tvName.setTextColor(Color.WHITE)
                 } else {
-                    v.setBackgroundColor(if (isPlaying) 0x400A84FF else Color.TRANSPARENT)
-                    h.tvName.setTextColor(if (isPlaying) 0xFFFFFFFF.toInt() else 0xFFE8EAF0.toInt())
+                    v.setBackgroundColor(if (isPlaying) 0x15FFFFFF else Color.TRANSPARENT)
+                    h.tvName.setTextColor(if (isPlaying) Color.WHITE else 0xFFB0B0B5.toInt())
                 }
             }
             h.itemView.setOnClickListener { onOverlayChannelSelected(position) }
