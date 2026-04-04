@@ -1811,6 +1811,12 @@ class PlayerActivity : AppCompatActivity() {
                     returnToLive()
                     return true
                 }
+                val channelType = intent.getStringExtra("channelType") ?: "LIVE"
+                val returnIntent = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("switchToTab", channelType)
+                }
+                startActivity(returnIntent)
                 finish()
                 return true
             }

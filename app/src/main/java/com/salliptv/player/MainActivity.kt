@@ -380,6 +380,11 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // Retour depuis PlayerActivity: switcher vers le bon onglet
+        val switchToTab = intent?.getStringExtra("switchToTab")
+        if (switchToTab != null) {
+            switchTab(switchToTab)
+        }
         // Si une playlist a été ajoutée, forcer le rechargement
         if (intent?.getBooleanExtra("playlistAdded", false) == true) {
             val newPlaylistId = intent.getIntExtra("playlistId", -1)

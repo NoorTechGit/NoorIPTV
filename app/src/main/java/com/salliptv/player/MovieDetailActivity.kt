@@ -201,6 +201,66 @@ class MovieDetailActivity : AppCompatActivity() {
         }
 
         setupTrailerButton(channelName)
+
+        // Load full channel data from Room (has TMDB/provider enriched data)
+        if (channelId > 0) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val ch = db.channelDao().getById(channelId)
+                if (ch != null) {
+                    withContext(Dispatchers.Main) {
+                        // Poster HD
+                        val poster = ch.posterUrl ?: ch.backdropUrl ?: ch.logoUrl
+                        if (!poster.isNullOrEmpty()) {
+                            Glide.with(this@MovieDetailActivity).load(poster).centerCrop().into(ivPoster)
+                        }
+                        val backdrop = ch.backdropUrl ?: ch.posterUrl
+                        if (!backdrop.isNullOrEmpty()) {
+                            Glide.with(this@MovieDetailActivity).load(backdrop).centerCrop().into(ivBackdrop)
+                        }
+
+                        // Title
+                        tvTitle.text = ch.cleanName ?: ch.name
+
+                        // Year
+                        if (!ch.releaseDate.isNullOrEmpty()) {
+                            tvYear.text = ch.releaseDate
+                            tvYear.visibility = View.VISIBLE
+                        }
+
+                        // Rating
+                        if (!ch.rating.isNullOrEmpty() && ch.rating != "0" && ch.rating != "0.0") {
+                            tvRating.text = "★ ${ch.rating}"
+                            tvRating.visibility = View.VISIBLE
+                            dotRating.visibility = View.VISIBLE
+                        }
+
+                        // Genre
+                        if (!ch.genre.isNullOrEmpty()) {
+                            tvGenre.text = ch.genre
+                            tvGenre.visibility = View.VISIBLE
+                        }
+
+                        // Plot
+                        if (!ch.plot.isNullOrEmpty()) {
+                            tvPlot.text = ch.plot
+                            tvPlot.visibility = View.VISIBLE
+                        }
+
+                        // Cast
+                        if (!ch.cast.isNullOrEmpty()) {
+                            tvCast.text = "${getString(R.string.detail_cast)} ${ch.cast}"
+                            tvCast.visibility = View.VISIBLE
+                        }
+
+                        // Director
+                        if (!ch.director.isNullOrEmpty()) {
+                            tvDirector.text = "${getString(R.string.detail_director)} ${ch.director}"
+                            tvDirector.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun initXtreamApi() {
