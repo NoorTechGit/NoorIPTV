@@ -265,11 +265,22 @@ class MovieDetailActivity : AppCompatActivity() {
 
     private fun initXtreamApi() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val playlists = db.playlistDao().getAll()
-            if (playlists.isNotEmpty()) {
-                val pl = playlists[0]
-                if (pl.type == "XTREAM") {
-                    api = XtreamApi(pl.url ?: "", pl.username ?: "", pl.password ?: "")
+            val pl = db.playlistDao().getById(playlistId) ?: db.playlistDao().getAll().firstOrNull()
+            if (pl != null) {
+                if (pl.type == "XTREAM" && !pl.url.isNullOrEmpty()) {
+                    api = XtreamApi(pl.url!!, pl.username ?: "", pl.password ?: "")
+                } else if (pl.type == "M3U" && !pl.url.isNullOrEmpty()) {
+                    // Detect Xtream from M3U URL
+                    val url = pl.url!!
+                    val userMatch = Regex("[?&]username=([^&]+)").find(url)
+                    val passMatch = Regex("[?&]password=([^&]+)").find(url)
+                    if (userMatch != null && passMatch != null) {
+                        api = XtreamApi(
+                            url.substringBefore("/get.php"),
+                            userMatch.groupValues[1],
+                            passMatch.groupValues[1]
+                        )
+                    }
                 }
             }
         }
