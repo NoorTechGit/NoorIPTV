@@ -34,8 +34,8 @@
         android:orientation="vertical"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
-        android:paddingBottom="6dp"
-        android:paddingTop="18dp">
+        android:paddingBottom="4dp"
+        android:paddingTop="10dp">
 
         <TextView
             android:id="@+id/tv_card_title"

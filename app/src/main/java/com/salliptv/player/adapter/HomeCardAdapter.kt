@@ -170,9 +170,14 @@ class HomeCardAdapter(
                 val hasPoster = !channel.posterUrl.isNullOrEmpty() || !channel.backdropUrl.isNullOrEmpty()
                 val request = Glide.with(itemView.context).load(thumbImage)
                     .placeholder(R.drawable.bg_card_normal).error(R.drawable.bg_card_normal)
-                // Always fill the card — no empty space, no padding
                 ivThumb.setPadding(0, 0, 0, 0)
-                ivThumb.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                if (hasPoster) {
+                    // Poster/backdrop: fill the card
+                    ivThumb.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                } else {
+                    // Logo: fit inside card, card background visible around edges (Apple TV style)
+                    ivThumb.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                }
                 request.into(ivThumb)
             } else ivThumb?.setImageResource(R.drawable.bg_card_normal)
         }
