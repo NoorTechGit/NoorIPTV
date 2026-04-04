@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark background -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0A0A0E" />
+        </shape>
+    </item>
+    <!-- AURA halo centered -->
+    <item
+        android:left="120dp"
+        android:right="120dp"
+        android:top="40dp"
+        android:bottom="40dp"
+        android:drawable="@drawable/ic_aura_logo" />
+</layer-list>
