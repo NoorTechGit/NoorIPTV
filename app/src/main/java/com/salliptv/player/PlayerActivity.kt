@@ -766,7 +766,10 @@ class PlayerActivity : AppCompatActivity() {
 
         // Load recent channels for the strip (exclude current)
         lifecycleScope.launch(Dispatchers.IO) {
-            val recent = db.channelDao().getRecent(playlistId).filter { it.id != currentChannelId }.take(8)
+            val currentType = intent.getStringExtra("channelType") ?: "LIVE"
+            val recent = db.channelDao().getRecent(playlistId)
+                .filter { it.id != currentChannelId && it.type == currentType }
+                .take(8)
             withContext(Dispatchers.Main) {
                 val strip = findViewById<android.widget.LinearLayout?>(R.id.strip_recent)
                 val sep = findViewById<View?>(R.id.strip_separator)

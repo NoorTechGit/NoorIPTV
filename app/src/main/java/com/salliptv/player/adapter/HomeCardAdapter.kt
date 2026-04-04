@@ -164,7 +164,7 @@ class HomeCardAdapter(
                 if (!sub.isNullOrEmpty()) { text = sub; visibility = View.VISIBLE } else visibility = View.GONE
             }
             ivFavBadge?.visibility = if (channel.isFavorite) View.VISIBLE else View.GONE
-            tvLiveBadge?.visibility = if (sectionType == SectionType.LIVE) View.VISIBLE else View.GONE
+            tvLiveBadge?.visibility = if (channel.type == "LIVE") View.VISIBLE else View.GONE
             val thumbImage = channel.posterUrl ?: channel.backdropUrl ?: channel.logoUrl
             if (!thumbImage.isNullOrEmpty() && ivThumb != null) {
                 val hasPoster = !channel.posterUrl.isNullOrEmpty() || !channel.backdropUrl.isNullOrEmpty()
