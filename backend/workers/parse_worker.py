@@ -413,14 +413,18 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
         except ImportError:
             pass
 
-        # Apply parse_category to clean category names for Xtream data
+        # Clean category names: just remove "SRS -" / "VOD -" prefix, keep [FR] [EN] etc.
         if content_type == "xtream":
             for ch in parsed["channels"] + parsed["vod"] + parsed["series"]:
                 raw_cat = ch.get("category", "Unknown")
-                cat_info = parse_category(raw_cat)
-                ch["category"] = cat_info["category"]
-                if cat_info["lang"] and not ch.get("lang"):
-                    ch["lang"] = cat_info["lang"]
+                # Remove only the type prefix (SRS -, VOD -, LIVE -, TV -)
+                cleaned = re.sub(r'^(VOD|SRS|SERIES|LIVE|TV)\s*[-–—]\s*', '', raw_cat.strip(), flags=re.IGNORECASE).strip()
+                if cleaned:
+                    ch["category"] = cleaned
+                # Extract lang for badge field
+                lang_match = re.search(r'\[([A-Z]{2,8})\]\s*$', cleaned)
+                if lang_match and not ch.get("lang"):
+                    ch["lang"] = lang_match.group(1)
 
         # Quick cache-only enrichment for VOD/Series (no API calls, instant)
         vod_enriched = try_enrich_from_cache(parsed["vod"], "movie")
@@ -451,24 +455,22 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
                 except Exception:
                     pass
 
-                # VOD: promote provider poster/backdrop to poster_hd before TMDB may overwrite
+                # VOD: TMDB poster wins, provider poster as fallback
                 vod_list = []
                 for ch in vod_enriched:
                     entry = dict(ch, type="VOD")
-                    if entry.get("poster"):
+                    if not entry.get("poster_hd") and entry.get("poster"):
                         entry["poster_hd"] = entry["poster"]
-                    if entry.get("backdrop"):
-                        entry["backdrop"] = entry["backdrop"]  # already set; explicit for clarity
+                    if not entry.get("backdrop") and entry.get("backdrop"):
+                        pass  # already set by TMDB
                     vod_list.append(entry)
 
-                # Series: already grouped by provider, preserve poster/backdrop
+                # Series: TMDB poster wins, provider poster as fallback
                 series_list = []
                 for ch in series_enriched:
                     entry = dict(ch, type="SERIES")
-                    if entry.get("poster"):
+                    if not entry.get("poster_hd") and entry.get("poster"):
                         entry["poster_hd"] = entry["poster"]
-                    if entry.get("backdrop"):
-                        entry["backdrop"] = entry["backdrop"]  # already set; explicit for clarity
                     series_list.append(entry)
             else:
                 # M3U path: deduplicate live channels + group series episodes

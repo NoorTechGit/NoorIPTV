@@ -99,16 +99,30 @@ class HomeSectionAdapter(
         ) {
             currentSection = section
 
-            // Build title with language badge from first channel
-            val lang = section.channels.firstOrNull()?.countryPrefix
+            // Parse title: "Netflix [FR]" → title="Netflix", badge="FR"
+            var displayTitle = section.title
+            var lang: String? = null
+
+            // Extract [XX] from title
+            val bracketMatch = Regex("\\[([A-Z]{2,8})\\]\\s*$").find(displayTitle)
+            if (bracketMatch != null) {
+                lang = bracketMatch.groupValues[1]
+                displayTitle = displayTitle.substring(0, bracketMatch.range.first).trim()
+            }
+
+            // Fallback: use first channel's countryPrefix
+            if (lang == null) {
+                lang = section.channels.firstOrNull()?.countryPrefix
+            }
+
             if (!lang.isNullOrEmpty() && section.sectionType != SectionType.LIVE
                 && section.sectionType != SectionType.FAVORITES
                 && section.sectionType != SectionType.CONTINUE_WATCHING) {
-                val spannable = android.text.SpannableStringBuilder(section.title)
+                val spannable = android.text.SpannableStringBuilder(displayTitle)
                 spannable.append("  ")
                 val badge = android.text.SpannableString(lang)
                 badge.setSpan(
-                    android.text.style.BackgroundColorSpan(0x400A84FF),
+                    android.text.style.BackgroundColorSpan(0x30FFFFFF),
                     0, lang.length,
                     android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
@@ -118,14 +132,14 @@ class HomeSectionAdapter(
                     android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
                 badge.setSpan(
-                    android.text.style.ForegroundColorSpan(0xFF0A84FF.toInt()),
+                    android.text.style.ForegroundColorSpan(0xFFFFFFFF.toInt()),
                     0, lang.length,
                     android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
                 spannable.append(badge)
                 tvTitle.text = spannable
             } else {
-                tvTitle.text = section.title
+                tvTitle.text = displayTitle
             }
 
             val showSeeAll = onSeeAllClick != null && section.totalCount > section.channels.size
