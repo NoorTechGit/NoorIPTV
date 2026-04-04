@@ -274,10 +274,8 @@ class MainActivity : AppCompatActivity() {
                 tvCategoryName.text = category
                 loadChannels()
             }
-            // Move focus to channel list
-            rvChannels.postDelayed({
-                if (rvChannels.childCount > 0) rvChannels.getChildAt(0).requestFocus()
-            }, 300)
+            // Don't move focus — let user stay in sidebar (focus auto-selects)
+            // Focus moves to channel list only when user presses RIGHT
         }
 
         // Channel click → open PlayerActivity (Apple TV overlay with channel strip, program info, action bar)
