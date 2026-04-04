@@ -80,9 +80,15 @@ async def upload_playlist(
     # Generate job ID
     job_id = str(uuid.uuid4())
 
-    # Pass the already-encoded content directly to Celery
-    content_b64 = body.raw_content
-    
+    # Decode base64 and save to disk (worker expects a file path)
+    upload_dir = os.getenv("UPLOAD_DIR", "/tmp/salliptv_uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, f"{job_id}.gz")
+
+    raw_bytes = base64.b64decode(body.raw_content)
+    with open(file_path, "wb") as f:
+        f.write(raw_bytes)
+
     # Set initial status in Redis
     redis_client.setex(
         f"job:{job_id}",
@@ -93,17 +99,17 @@ async def upload_playlist(
             "device_id": device_id,
         })
     )
-    
-    # Queue the task
-    task = process_playlist.delay(content_b64, content_type, device_id)
-    
+
+    # Queue the task — pass file path, not raw content
+    task = process_playlist.delay(file_path, content_type, device_id, job_id)
+
     # Store task ID for tracking
     redis_client.setex(
         f"job_task:{job_id}",
         3600,
         task.id
     )
-    
+
     return PlaylistUploadResponse(
         job_id=job_id,
         status="processing",

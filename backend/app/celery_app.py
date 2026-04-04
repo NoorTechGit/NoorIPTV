@@ -51,6 +51,14 @@ celery_app.conf.update(
             "task": "workers.parse_worker.enrich_logos_background",
             "schedule": 600,  # Every 10 minutes
         },
+        "smart-categorize-channels": {
+            "task": "workers.ml_worker.categorize_channels_batch",
+            "schedule": 1800,  # Every 30 minutes
+        },
+        "generate-home-sections": {
+            "task": "workers.ml_worker.generate_home_sections",
+            "schedule": 3600,  # Every hour
+        },
     },
     # Result expiration
     result_expires=3600,  # 1 hour

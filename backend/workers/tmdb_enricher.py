@@ -254,6 +254,7 @@ def _apply_metadata(ch: Dict, meta: Dict):
 
 
 LOGO_BASE = "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries"
+PICONS_BASE = "https://raw.githubusercontent.com/picons/picons/master/build-source/logos"
 
 # Map common country prefixes to logo country codes/folders
 COUNTRY_MAP = {
@@ -269,51 +270,163 @@ COUNTRY_MAP = {
 }
 
 
+def _build_slug_variants(name: str) -> List[str]:
+    """
+    Build multiple slug variants for logo lookup.
+    tv-logos repo uses specific naming patterns:
+      - "canal-plus-fr.png" (+ → plus)
+      - "bein-sports-1-french-fr.png" (inserts language qualifier)
+      - "c-news-fr.png" (CNews → c-news, camelCase split)
+      - "canal-plus-cinemas-fr.png" (plural form)
+    """
+    lower = name.lower().strip()
+
+    # Pre-replacements before stripping
+    lower = lower.replace("+", " plus ")
+    lower = lower.replace("&", " and ")
+
+    # Build base slug: strip non-alphanumeric
+    slug = re.sub(r'[^a-z0-9\s-]', '', lower)
+    slug = re.sub(r'\s+', '-', slug).strip('-')
+
+    if not slug:
+        return []
+
+    variants = [slug]
+
+    # CamelCase / run-together split: "cnews" → "c-news", "CNews" → "c-news"
+    # Split at boundaries like lowercase→uppercase in the original name
+    original_clean = re.sub(r'[^a-zA-Z0-9\s]', ' ', name)
+    parts = original_clean.split()
+    if len(parts) == 1 and len(parts[0]) > 3:
+        # Single word that might be camelCase: insert hyphens at case boundaries
+        word = parts[0]
+        # lowercase→uppercase: "cNews" → "c-News"
+        split = re.sub(r'([a-z])([A-Z])', r'\1-\2', word).lower()
+        split_slug = re.sub(r'[^a-z0-9-]', '', split)
+        if split_slug != slug and split_slug not in variants:
+            variants.append(split_slug)
+        # uppercase+uppercase+lowercase: "CNews" → "C-News"
+        split2 = re.sub(r'([A-Z])([A-Z][a-z])', r'\1-\2', word).lower()
+        split_slug2 = re.sub(r'[^a-z0-9-]', '', split2)
+        if split_slug2 != slug and split_slug2 not in variants:
+            variants.append(split_slug2)
+
+    # beIN Sports 1 → try "bein-sports-1-french" variant
+    if "bein" in slug:
+        for suffix in ("french", "arabic", "english"):
+            variant = f"{slug}-{suffix}"
+            if variant not in variants:
+                variants.append(variant)
+
+    # Canal+ → "canal-plus" already handled. Also try "canal-plus-cinema" etc.
+    if "canal" in slug and "plus" not in slug:
+        variants.append(slug.replace("canal", "canal-plus"))
+
+    # TF1 → also try "tf-1"
+    if re.match(r'^tf\d', slug):
+        variants.append(re.sub(r'^tf', 'tf-', slug))
+
+    # France 2 → also try "france-2-hd"
+    if slug.startswith("france-"):
+        variants.append(f"{slug}-hd")
+
+    # RMC Sport → try "rmc-sport-1"
+    if slug.startswith("rmc-sport") and not re.search(r'\d$', slug):
+        variants.append(f"{slug}-1")
+
+    # Try plural form of last word: "cinema" → "cinemas"
+    parts_list = slug.split('-')
+    if len(parts_list) >= 2:
+        last = parts_list[-1]
+        if not last.endswith('s') and last not in ('1', '2', '3', '4', '5'):
+            plural_slug = '-'.join(parts_list[:-1] + [last + 's'])
+            if plural_slug not in variants:
+                variants.append(plural_slug)
+
+    return variants
+
+
+def _search_picons(name: str) -> Optional[str]:
+    """
+    Fallback: search picons repo for channel logo (SVG format).
+    Naming: all lowercase, no spaces, no hyphens.
+    e.g. "Canal+" → "canalplus.default.svg"
+    """
+    # Simple slug: lowercase, strip non-alpha, remove spaces
+    slug = name.lower().strip()
+    slug = slug.replace("+", "plus").replace("&", "and")
+    slug = re.sub(r'[^a-z0-9]', '', slug)
+    if not slug or len(slug) < 2:
+        return None
+
+    try:
+        with httpx.Client(timeout=5, follow_redirects=True) as client:
+            url = f"{PICONS_BASE}/{slug}.default.svg"
+            resp = client.head(url)
+            if resp.status_code == 200:
+                return url
+            # Try with "hd" suffix
+            url_hd = f"{PICONS_BASE}/{slug}hd.default.svg"
+            resp = client.head(url_hd)
+            if resp.status_code == 200:
+                return url_hd
+    except Exception:
+        pass
+    return None
+
+
 def search_channel_logo(channel_name: str, lang: str = None) -> Optional[str]:
     """
-    Search for HD logo of a TV channel from tv-logo/tv-logos GitHub repo.
-    512px PNGs with transparent background.
+    Search for HD logo of a TV channel.
+    Source 1: tv-logo/tv-logos (PNG, high-res) — tries multiple slug variants.
+    Source 2: picons/picons (SVG) — fallback for channels not in tv-logos.
     """
     clean = normalize_title(channel_name)
     if not clean or len(clean) < 2:
         return None
 
-    # Build slug: "TF1" → "tf1", "France 2" → "france-2", "BFM TV" → "bfm-tv"
-    slug = re.sub(r'[^a-z0-9\s-]', '', clean.lower())
-    slug = re.sub(r'\s+', '-', slug).strip('-')
-    if not slug:
+    slugs = _build_slug_variants(clean)
+    if not slugs:
         return None
 
     # Determine country from lang or try common ones
     countries_to_try = []
     if lang and lang.upper() in COUNTRY_MAP:
         countries_to_try.append(COUNTRY_MAP[lang.upper()])
-    # Always try FR and UK as common fallbacks
     countries_to_try.extend([("france", "fr"), ("united-kingdom", "uk"), ("germany", "de")])
-    # Deduplicate
-    seen = set()
-    countries_to_try = [c for c in countries_to_try if c not in seen and not seen.add(c)]
+    seen_c = set()
+    countries_to_try = [c for c in countries_to_try if c not in seen_c and not seen_c.add(c)]
 
+    # Source 1: tv-logos (PNG)
     try:
         with httpx.Client(timeout=5, follow_redirects=True) as client:
             for country_folder, country_code in countries_to_try:
-                url = f"{LOGO_BASE}/{country_folder}/{slug}-{country_code}.png"
-                resp = client.head(url)
-                if resp.status_code == 200:
-                    return url
+                for slug in slugs:
+                    url = f"{LOGO_BASE}/{country_folder}/{slug}-{country_code}.png"
+                    resp = client.head(url)
+                    if resp.status_code == 200:
+                        return url
     except Exception:
         pass
+
+    # Source 2: picons (SVG fallback)
+    picons_result = _search_picons(clean)
+    if picons_result:
+        return picons_result
 
     return None
 
 
-def enrich_live_channel_logos(channels: List[Dict]) -> List[Dict]:
+def enrich_live_channel_logos(channels: List[Dict], live_search: bool = False) -> List[Dict]:
     """
-    Enrich live channel logos from cache. No API calls — cache only.
-    Use continue_logo_enrichment task for API calls.
+    Enrich live channel logos from Redis cache.
+    If live_search=True, falls back to HTTP lookup on cache miss and caches the result.
+    This ensures first-parse gets logos too (not just background enrichment).
     """
     r = get_redis()
     hits = 0
+    searches = 0
     for ch in channels:
         name = normalize_title(ch.get("name", ""))
         if not name or len(name) < 2:
@@ -325,10 +438,29 @@ def enrich_live_channel_logos(channels: List[Dict]) -> List[Dict]:
                 if url and url != "none":
                     ch["logo_hd"] = url
                     hits += 1
+                    continue
+                elif url == "none":
+                    # Already searched before, no logo exists
+                    continue
             except Exception:
                 pass
-    if hits > 0:
-        logger.info(f"Logo cache: {hits}/{len(channels)} HD logos applied")
+
+        # Cache miss — do live search if enabled
+        if live_search and searches < 200:
+            try:
+                logo_url = search_channel_logo(name, ch.get("lang"))
+                searches += 1
+                if logo_url:
+                    ch["logo_hd"] = logo_url
+                    hits += 1
+                    if r:
+                        r.setex(key, 30 * 86400, logo_url)
+                elif r:
+                    r.setex(key, 7 * 86400, "none")
+            except Exception:
+                pass
+
+    logger.info(f"Logo enrichment: {hits}/{len(channels)} HD logos applied ({searches} live searches)")
     return channels
 
 

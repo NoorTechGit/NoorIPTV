@@ -450,7 +450,7 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
                 live_deduped = dedup_live_channels(parsed["channels"])
                 try:
                     from workers.tmdb_enricher import enrich_live_channel_logos
-                    live_deduped = enrich_live_channel_logos(live_deduped)
+                    live_deduped = enrich_live_channel_logos(live_deduped, live_search=True)
                 except Exception:
                     pass
                 live = [dict(ch, type="LIVE") for ch in live_deduped]
@@ -477,7 +477,7 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
                 live_deduped = dedup_live_channels(parsed["channels"])
                 try:
                     from workers.tmdb_enricher import enrich_live_channel_logos
-                    live_deduped = enrich_live_channel_logos(live_deduped)
+                    live_deduped = enrich_live_channel_logos(live_deduped, live_search=True)
                 except Exception:
                     pass
                 live = [dict(ch, type="LIVE") for ch in live_deduped]
@@ -653,6 +653,7 @@ def enrich_logos_background(self):
     """
     Background task: find HD logos for live channels from tv-logo/tv-logos.
     Processes 500 channels per run, self-chains until all are done.
+    After each batch, rewrites the result file with updated logos.
     """
     try:
         import gzip as gz
@@ -667,8 +668,10 @@ def enrich_logos_background(self):
         if not result_files:
             return {"status": "no_result_files"}
 
+        latest = result_files[0]
+
         # Get ALL unique live channels with their lang
-        with gz.open(str(result_files[0]), 'rt', encoding='utf-8', errors='ignore') as f:
+        with gz.open(str(latest), 'rt', encoding='utf-8', errors='ignore') as f:
             data = json.load(f)
 
         # Collect unique (name, lang) pairs not yet cached
@@ -707,6 +710,27 @@ def enrich_logos_background(self):
 
         remaining = len(missing) - len(batch)
         logger.info(f"Logo enrichment: {found}/{len(batch)} found, {remaining} remaining")
+
+        # Update result file with newly cached logos
+        updated = 0
+        for ch in data:
+            if ch.get("type") != "LIVE":
+                continue
+            name = normalize_title(ch.get("name", "")).lower().strip()
+            if not name:
+                continue
+            cached = r.get(f"logo:{name}")
+            if cached and cached != "none" and not ch.get("logo_hd"):
+                ch["logo_hd"] = cached
+                updated += 1
+
+        if updated > 0:
+            # Rewrite the result file with updated logos
+            tmp_path = str(latest) + ".tmp"
+            with gz.open(tmp_path, 'wt', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False)
+            os.replace(tmp_path, str(latest))
+            logger.info(f"Updated result file: {updated} logos added")
 
         # Self-chain: if there are more to process, schedule another run in 5s
         if remaining > 0:
