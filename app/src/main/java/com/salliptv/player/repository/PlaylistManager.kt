@@ -252,6 +252,8 @@ class PlaylistManager(
         // Fallback: insert Xtream data directly without backend enrichment
         Log.w(TAG, "Backend unavailable or failed — inserting Xtream data locally")
         val allChannels = live + vod + series
+        // Delete old channels right before inserting new ones
+        channelDao.deleteByPlaylist(playlistId)
         scope.send(State.Saving(0))
         for (i in allChannels.indices step BATCH_SIZE) {
             val batch = allChannels.subList(i, minOf(i + BATCH_SIZE, allChannels.size))
@@ -431,6 +433,9 @@ class PlaylistManager(
             val reader = JsonReader(InputStreamReader(GZIPInputStream(responseBody.byteStream())))
             reader.beginArray()
 
+            // Delete old channels atomically right before inserting the new ones
+            channelDao.deleteByPlaylist(playlistId)
+
             val batch = mutableListOf<Channel>()
             var count = 0
 
@@ -503,6 +508,8 @@ class PlaylistManager(
         emitter: ProducerScope<State>
     ) {
         emitter.send(State.Processing(20, "Parsing locally…"))
+        // Delete old channels before inserting new ones
+        channelDao.deleteByPlaylist(playlistId)
         var totalInserted = 0
 
         M3uParser.parse(

@@ -298,7 +298,7 @@
         <TextView android:id="@+id/tv_program_duration" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <TextView android:id="@+id/tv_program_desc"    android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <TextView android:id="@+id/tv_date_time"       android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-        <ProgressBar android:id="@+id/progress"        android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        <ImageView android:id="@+id/progress"        android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:src="@drawable/ic_aura_logo" />
         <ProgressBar android:id="@+id/pb_program_progress" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <TextView android:id="@+id/tv_status"          android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:textColor="#8E8E93" android:textSize="16sp" android:layout_gravity="center" />
         <TextView android:id="@+id/tv_preview_channel" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />

@@ -19,7 +19,6 @@ import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import android.text.Editable
@@ -63,7 +62,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvCategoryName: TextView
     private lateinit var tvChannelCount: TextView
     private lateinit var tvStatus: TextView
-    private lateinit var progress: ProgressBar
+    private lateinit var progress: ImageView
     private lateinit var tabLive: TextView
     private lateinit var tabVod: TextView
     private lateinit var tabSeries: TextView
@@ -265,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         channelAdapter.setChannels(favs)
                         tvChannelCount.text = getString(R.string.channels_count, favs.size)
-                        progress.visibility = View.GONE
+                        hideProgress()
                         tvStatus.visibility = if (favs.isEmpty()) View.VISIBLE else View.GONE
                         if (tvStatus.visibility == View.VISIBLE) tvStatus.text = getString(R.string.no_channels)
                     }
@@ -721,9 +720,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showProgress() {
+        progress.visibility = View.VISIBLE
+        val anim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.rotate_spinner)
+        progress.startAnimation(anim)
+    }
+
+    private fun hideProgress() {
+        progress.clearAnimation()
+        progress.visibility = View.GONE
+    }
+
     private fun loadChannels() {
         if (currentPlaylistId < 0) return
-        progress.visibility = View.VISIBLE
+        showProgress()
         tvStatus.visibility = View.GONE
         rvChannels.visibility = View.VISIBLE
 
@@ -735,7 +745,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             withContext(Dispatchers.Main) {
-                progress.visibility = View.GONE
+                hideProgress()
                 channelAdapter.setChannels(channels)
                 tvChannelCount.text = getString(R.string.channels_count, channels.size)
 
@@ -793,7 +803,7 @@ class MainActivity : AppCompatActivity() {
         recyclerSections?.visibility = View.VISIBLE
         rvCategories.visibility = View.GONE
         tvCategoryName.text = getString(R.string.tab_favorites)
-        progress.visibility = View.VISIBLE
+        showProgress()
         tvStatus.visibility = View.GONE
 
         if (isLandscape && sidebarGroups != null) {
@@ -805,7 +815,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val channels = db.channelDao().getFavorites(currentPlaylistId)
             withContext(Dispatchers.Main) {
-                progress.visibility = View.GONE
+                hideProgress()
                 if (channels.isEmpty()) {
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = getString(R.string.no_channels)
@@ -848,7 +858,7 @@ class MainActivity : AppCompatActivity() {
         recyclerSections?.visibility = View.VISIBLE
         rvCategories.visibility = View.GONE
         tvCategoryName.text = getString(R.string.tab_recent)
-        progress.visibility = View.VISIBLE
+        showProgress()
         tvStatus.visibility = View.GONE
 
         if (isLandscape && sidebarGroups != null) {
@@ -860,7 +870,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val channels = db.channelDao().getRecent(currentPlaylistId)
             withContext(Dispatchers.Main) {
-                progress.visibility = View.GONE
+                hideProgress()
                 if (channels.isEmpty()) {
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = getString(R.string.no_channels)
@@ -969,12 +979,12 @@ class MainActivity : AppCompatActivity() {
                         tvStatus.visibility = View.GONE
                         homeSectionAdapter.setSections(sections)
                     }
-                    progress.visibility = View.GONE
+                    hideProgress()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading sections", e)
                 withContext(Dispatchers.Main) {
-                    progress.visibility = View.GONE
+                    hideProgress()
                     tvStatus.visibility = View.VISIBLE
                     tvStatus.text = "Erreur: ${e.message}"
                 }

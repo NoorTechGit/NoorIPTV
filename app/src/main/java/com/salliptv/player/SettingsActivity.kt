@@ -222,10 +222,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshPlaylist(pl: Playlist) {
-        Toast.makeText(this, "Refreshing ${pl.name}...", Toast.LENGTH_SHORT).show()
+        showLoadingOverlay("Refreshing ${pl.name}…", "Updating channels")
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                db.channelDao().deleteByPlaylist(pl.id)
+                // Only update timestamp — old channels stay visible until new ones replace them
                 db.playlistDao().updateTimestamp(pl.id, System.currentTimeMillis())
             }
             if ("XTREAM" == pl.type) loadXtreamChannels(pl, pl.id)
@@ -692,11 +692,17 @@ class SettingsActivity : AppCompatActivity() {
                 animate().alpha(1f).setDuration(200).start()
             }
         }
+        val spinner = binding.progressOverlay
+        if (spinner.animation == null || !spinner.animation.hasStarted() || spinner.animation.hasEnded()) {
+            val anim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.rotate_spinner)
+            spinner.startAnimation(anim)
+        }
         binding.tvOverlayStatus.text = title
         binding.tvOverlayDetail.text = detail
     }
 
     private fun hideLoadingOverlay() {
+        binding.progressOverlay.clearAnimation()
         binding.overlayLoading.animate()
             .alpha(0f)
             .setDuration(200)

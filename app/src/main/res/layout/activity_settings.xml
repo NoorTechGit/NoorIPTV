@@ -388,11 +388,11 @@
                     android:gravity="center"
                     android:paddingTop="12dp">
 
-                    <ProgressBar
+                    <ImageView
                         android:id="@+id/progress_status"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:indeterminateTint="@color/text_secondary"
+                        android:src="@drawable/ic_aura_logo"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone" />
 
@@ -607,11 +607,11 @@
         android:clickable="true"
         android:focusable="true">
 
-        <ProgressBar
+        <ImageView
             android:id="@+id/progress_overlay"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:indeterminateTint="#FFFFFF" />
+            android:src="@drawable/ic_aura_logo" />
 
         <TextView
             android:id="@+id/tv_overlay_status"
