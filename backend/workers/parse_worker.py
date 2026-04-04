@@ -651,8 +651,8 @@ def continue_tmdb_enrichment(self):
 @shared_task(bind=True, max_retries=0)
 def enrich_logos_background(self):
     """
-    Background task: find HD logos for live channels via TMDB.
-    Runs periodically via beat. Caches in Redis.
+    Background task: find HD logos for live channels from tv-logo/tv-logos.
+    Processes 500 channels per run, self-chains until all are done.
     """
     try:
         import gzip as gz
@@ -663,42 +663,56 @@ def enrich_logos_background(self):
         if not r:
             return {"status": "no_redis"}
 
-        # Find latest result file
         result_files = sorted(UPLOAD_DIR.glob("*_result.json.gz"), key=lambda f: f.stat().st_mtime, reverse=True)
         if not result_files:
             return {"status": "no_result_files"}
 
-        # Get unique live channel names not yet cached
+        # Get ALL unique live channels with their lang
         with gz.open(str(result_files[0]), 'rt', encoding='utf-8', errors='ignore') as f:
             data = json.load(f)
 
-        live_names = set()
+        # Collect unique (name, lang) pairs not yet cached
+        seen = set()
+        missing = []
         for ch in data:
-            if ch.get("type") == "LIVE":
-                name = normalize_title(ch.get("name", "")).lower().strip()
-                if name and len(name) >= 2:
-                    # Check if already cached
-                    if not r.exists(f"logo:{name}"):
-                        live_names.add(name)
+            if ch.get("type") != "LIVE":
+                continue
+            name = normalize_title(ch.get("name", "")).lower().strip()
+            lang = ch.get("lang")
+            if not name or len(name) < 2 or name in seen:
+                continue
+            seen.add(name)
+            cached = r.get(f"logo:{name}")
+            if cached is None:  # Not in cache at all (not even "none")
+                missing.append((name, lang))
 
-        if not live_names:
+        if not missing:
             logger.info("All live channel logos are cached")
-            return {"status": "complete"}
+            return {"status": "complete", "total_cached": len(seen)}
 
-        # Enrich batch of 100
-        batch = list(live_names)[:100]
+        # Process batch of 500
+        batch = missing[:500]
         found = 0
-        for name in batch:
-            logo_url = search_channel_logo(name)
-            if logo_url:
-                r.setex(f"logo:{name}", 30 * 86400, logo_url)
-                found += 1
-            else:
-                r.setex(f"logo:{name}", 7 * 86400, "none")  # Cache miss for 7 days
-            t.sleep(0.05)  # Rate limit
+        for name, lang in batch:
+            try:
+                logo_url = search_channel_logo(name, lang)
+                if logo_url:
+                    r.setex(f"logo:{name}", 30 * 86400, logo_url)
+                    found += 1
+                else:
+                    r.setex(f"logo:{name}", 7 * 86400, "none")
+            except Exception:
+                pass
+            t.sleep(0.03)
 
-        logger.info(f"Logo enrichment: {found}/{len(batch)} found, {len(live_names) - len(batch)} remaining")
-        return {"status": "enriched", "found": found, "batch": len(batch), "remaining": len(live_names) - len(batch)}
+        remaining = len(missing) - len(batch)
+        logger.info(f"Logo enrichment: {found}/{len(batch)} found, {remaining} remaining")
+
+        # Self-chain: if there are more to process, schedule another run in 5s
+        if remaining > 0:
+            enrich_logos_background.apply_async(countdown=5)
+
+        return {"status": "enriched", "found": found, "batch": len(batch), "remaining": remaining}
 
     except Exception as e:
         logger.error(f"Logo enrichment error: {e}")
