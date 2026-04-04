@@ -11,7 +11,9 @@ import androidx.room.PrimaryKey
         Index(value = ["type"]),
         Index(value = ["groupTitle"]),
         Index(value = ["cleanName"]), // NOUVEAU: Index pour regroupement rapide
-        Index(value = ["playlistId", "type", "cleanName"]) // Index composite pour requêtes de regroupement
+        Index(value = ["playlistId", "type", "cleanName"]),
+        Index(value = ["playlistId", "type", "groupTitle", "hidden"]),
+        Index(value = ["playlistId", "type", "hidden"])
     ]
 )
 data class Channel(

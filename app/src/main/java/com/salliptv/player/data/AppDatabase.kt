@@ -10,7 +10,7 @@ import com.salliptv.player.model.Playlist
 
 @Database(
     entities = [Playlist::class, Channel::class, Category::class], 
-    version = 4, // INCREMENTÉ pour migration (hidden field)
+    version = 5, // Index performance pour GROUP BY sur 549K séries
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,7 +32,8 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 .addMigrations(
                     DatabaseMigrations.MIGRATION_2_3,
-                    DatabaseMigrations.MIGRATION_3_4
+                    DatabaseMigrations.MIGRATION_3_4,
+                    DatabaseMigrations.MIGRATION_4_5
                 )
                 // En développement, on peut utiliser destructive migration
                 // .fallbackToDestructiveMigration()

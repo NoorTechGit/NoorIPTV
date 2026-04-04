@@ -56,4 +56,12 @@ object DatabaseMigrations {
             database.execSQL("ALTER TABLE channels ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0")
         }
     }
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            // Performance indexes for GROUP BY queries on 549K+ rows
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_channels_playlistId_type_groupTitle_hidden ON channels (playlistId, type, groupTitle, hidden)")
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_channels_playlistId_type_hidden ON channels (playlistId, type, hidden)")
+        }
+    }
 }
