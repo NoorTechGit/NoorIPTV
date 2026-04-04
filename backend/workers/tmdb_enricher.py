@@ -128,12 +128,17 @@ def extract_badges(raw_name: str) -> dict:
             year = y
         name = name[:year_match.start()] + name[year_match.end():]
 
-    # Extract season/episode: S01E01, S01, etc.
-    se_match = re.search(r'\s*S(\d{1,2})(?:E(\d{1,2}))?\s*$', name, re.IGNORECASE)
+    # Extract season/episode: S01E01, S01 E01, S01, Season 1 Episode 2, etc.
+    se_match = re.search(r'\s*S(\d{1,2})\s*E(\d{1,3})\s*$', name, re.IGNORECASE)
+    if not se_match:
+        se_match = re.search(r'\s*S(\d{1,2})\s*$', name, re.IGNORECASE)
     if se_match:
         season = int(se_match.group(1))
-        if se_match.group(2):
-            episode = int(se_match.group(2))
+        try:
+            if se_match.group(2):
+                episode = int(se_match.group(2))
+        except IndexError:
+            pass
         name = name[:se_match.start()]
 
     # Cleanup
