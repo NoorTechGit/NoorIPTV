@@ -131,6 +131,9 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.6.1'
     ksp 'androidx.room:room-compiler:2.6.1'
 
+    // WorkManager for background tasks
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
+
     // Google Play Billing
     implementation 'com.android.billingclient:billing:6.1.0'
     implementation 'com.android.billingclient:billing-ktx:6.1.0'

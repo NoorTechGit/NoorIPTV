@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import com.salliptv.player.security.SecurityGuard
 import com.salliptv.player.security.TokenManager
+import com.salliptv.player.service.PlaylistUpdateWorker
 
 /**
  * Application class pour SalliPTV
@@ -41,6 +42,10 @@ class SalliApplication : Application() {
         } else {
             Log.d(TAG, "✅ Token valide présent")
         }
+
+        // Schedule daily playlist auto-update (runs once/day when network is available)
+        PlaylistUpdateWorker.schedule(this)
+        Log.d(TAG, "✅ Daily playlist update scheduled")
     }
     
     /**

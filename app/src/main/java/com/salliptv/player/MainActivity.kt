@@ -177,6 +177,13 @@ class MainActivity : AppCompatActivity() {
         tabRecent = findViewById(R.id.tab_recent)
         tabSettings = findViewById(R.id.tab_settings)
 
+        // Check if background worker updated playlists since last launch
+        val prefs = getSharedPreferences("salliptv_settings", MODE_PRIVATE)
+        if (prefs.getBoolean("playlist_updated", false)) {
+            Toast.makeText(this, "Playlist mise à jour", Toast.LENGTH_SHORT).show()
+            prefs.edit().putBoolean("playlist_updated", false).apply()
+        }
+
         // Init search/filter bar
         searchFilterBar = findViewById(R.id.search_filter_bar)
         etFilter = findViewById(R.id.et_filter)

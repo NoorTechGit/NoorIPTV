@@ -361,15 +361,35 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
                 update_fn=lambda p: self.update_state(state='PROCESSING', meta={'progress': p})
             )
         elif content_type == "xtream":
+            self.update_state(state='PROCESSING', meta={'progress': 20})
+
             with gzip.open(file_path, 'rt', encoding='utf-8') as f:
-                data = json.load(f)
-            parsed = {
-                "channels": [
-                    {"name": s.get("name", ""), "logo": s.get("stream_icon"), "category": s.get("category_name", ""), "url": s.get("stream_url", "")}
-                    for s in data.get("streams", [])
-                ],
-                "vod": [], "series": [],
-            }
+                raw_data = json.load(f)
+
+            # Split by type: flat array of channel objects with a "type" field
+            parsed = {"channels": [], "vod": [], "series": []}
+            for item in raw_data:
+                ch = {
+                    "name": item.get("name", ""),
+                    "logo": item.get("logo"),
+                    "category": item.get("category", "Unknown"),
+                    "url": item.get("url", ""),
+                    "stream_id": item.get("stream_id", 0),
+                }
+                # Copy provider metadata (Xtream gives us poster/plot for VOD/series)
+                for field in ("plot", "cast", "rating", "poster", "backdrop"):
+                    if item.get(field):
+                        ch[field] = item[field]
+
+                item_type = item.get("type", "LIVE")
+                if item_type == "VOD":
+                    parsed["vod"].append(ch)
+                elif item_type == "SERIES":
+                    parsed["series"].append(ch)
+                else:
+                    parsed["channels"].append(ch)
+
+            logger.info(f"Parsed Xtream data: {len(parsed['channels'])} live, {len(parsed['vod'])} vod, {len(parsed['series'])} series")
         else:
             raise ValueError(f"Unknown content type: {content_type}")
 
@@ -383,8 +403,24 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
                 if b["lang"]: ch["lang"] = b["lang"]
                 if b["quality"]: ch["quality"] = b["quality"]
                 if b["clean_title"]: ch["clean_name"] = b["clean_title"]
+            if content_type == "xtream":
+                # Apply badges to VOD and series too for Xtream data
+                for ch in parsed["vod"] + parsed["series"]:
+                    b = extract_badges(ch.get("name", ""))
+                    if b["lang"]: ch["lang"] = b["lang"]
+                    if b["quality"]: ch["quality"] = b["quality"]
+                    if b["clean_title"]: ch["clean_name"] = b["clean_title"]
         except ImportError:
             pass
+
+        # Apply parse_category to clean category names for Xtream data
+        if content_type == "xtream":
+            for ch in parsed["channels"] + parsed["vod"] + parsed["series"]:
+                raw_cat = ch.get("category", "Unknown")
+                cat_info = parse_category(raw_cat)
+                ch["category"] = cat_info["category"]
+                if cat_info["lang"] and not ch.get("lang"):
+                    ch["lang"] = cat_info["lang"]
 
         # Quick cache-only enrichment for VOD/Series (no API calls, instant)
         vod_enriched = try_enrich_from_cache(parsed["vod"], "movie")
@@ -403,19 +439,51 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
         result_file = None
         if job_id:
             result_path = str(UPLOAD_DIR / f"{job_id}_result.json.gz")
-            # Deduplicate live channels + apply HD logos from cache
-            live_deduped = dedup_live_channels(parsed["channels"])
-            try:
-                from workers.tmdb_enricher import enrich_live_channel_logos
-                live_deduped = enrich_live_channel_logos(live_deduped)
-            except Exception:
-                pass
-            live = [dict(ch, type="LIVE") for ch in live_deduped]
-            vod_list = [dict(ch, type="VOD") for ch in vod_enriched]
 
-            # Group series episodes into unique series entries
-            series_grouped = group_series(series_enriched)
-            series_list = [dict(ch, type="SERIES") for ch in series_grouped]
+            if content_type == "xtream":
+                # Xtream data is already clean: skip dedup and series grouping
+                # Series are already one entry per show (not per episode)
+                live = [dict(ch, type="LIVE") for ch in parsed["channels"]]
+                try:
+                    from workers.tmdb_enricher import enrich_live_channel_logos
+                    live_enriched = enrich_live_channel_logos([dict(ch) for ch in parsed["channels"]])
+                    live = [dict(ch, type="LIVE") for ch in live_enriched]
+                except Exception:
+                    pass
+
+                # VOD: promote provider poster/backdrop to poster_hd before TMDB may overwrite
+                vod_list = []
+                for ch in vod_enriched:
+                    entry = dict(ch, type="VOD")
+                    if entry.get("poster"):
+                        entry["poster_hd"] = entry["poster"]
+                    if entry.get("backdrop"):
+                        entry["backdrop"] = entry["backdrop"]  # already set; explicit for clarity
+                    vod_list.append(entry)
+
+                # Series: already grouped by provider, preserve poster/backdrop
+                series_list = []
+                for ch in series_enriched:
+                    entry = dict(ch, type="SERIES")
+                    if entry.get("poster"):
+                        entry["poster_hd"] = entry["poster"]
+                    if entry.get("backdrop"):
+                        entry["backdrop"] = entry["backdrop"]  # already set; explicit for clarity
+                    series_list.append(entry)
+            else:
+                # M3U path: deduplicate live channels + group series episodes
+                live_deduped = dedup_live_channels(parsed["channels"])
+                try:
+                    from workers.tmdb_enricher import enrich_live_channel_logos
+                    live_deduped = enrich_live_channel_logos(live_deduped)
+                except Exception:
+                    pass
+                live = [dict(ch, type="LIVE") for ch in live_deduped]
+                vod_list = [dict(ch, type="VOD") for ch in vod_enriched]
+
+                # Group series episodes into unique series entries
+                series_grouped = group_series(series_enriched)
+                series_list = [dict(ch, type="SERIES") for ch in series_grouped]
 
             all_channels = live + vod_list + series_list
 
