@@ -413,15 +413,15 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
         except ImportError:
             pass
 
-        # Clean category names: just remove "SRS -" / "VOD -" prefix, keep [FR] [EN] etc.
+        # Clean category names for VOD/Series only (live groups are already clean)
         if content_type == "xtream":
-            for ch in parsed["channels"] + parsed["vod"] + parsed["series"]:
+            for ch in parsed["vod"] + parsed["series"]:
                 raw_cat = ch.get("category", "Unknown")
-                # Remove only the type prefix (SRS -, VOD -, LIVE -, TV -)
-                cleaned = re.sub(r'^(VOD|SRS|SERIES|LIVE|TV)\s*[-–—]\s*', '', raw_cat.strip(), flags=re.IGNORECASE).strip()
+                # Remove type prefix: "SRS -", "VOD -"
+                cleaned = re.sub(r'^(VOD|SRS|SERIES)\s*[-–—]\s*', '', raw_cat.strip(), flags=re.IGNORECASE).strip()
                 if cleaned:
                     ch["category"] = cleaned
-                # Extract lang for badge field
+                # Extract lang for badge
                 lang_match = re.search(r'\[([A-Z]{2,8})\]\s*$', cleaned)
                 if lang_match and not ch.get("lang"):
                     ch["lang"] = lang_match.group(1)
@@ -446,14 +446,14 @@ def process_playlist(self, file_path: str, content_type: str, device_id: str, jo
 
             if content_type == "xtream":
                 # Xtream data is already clean: skip dedup and series grouping
-                # Series are already one entry per show (not per episode)
-                live = [dict(ch, type="LIVE") for ch in parsed["channels"]]
+                # Xtream: still deduplicate live channels (TF1 HD + TF1 SD → one TF1)
+                live_deduped = dedup_live_channels(parsed["channels"])
                 try:
                     from workers.tmdb_enricher import enrich_live_channel_logos
-                    live_enriched = enrich_live_channel_logos([dict(ch) for ch in parsed["channels"]])
-                    live = [dict(ch, type="LIVE") for ch in live_enriched]
+                    live_deduped = enrich_live_channel_logos(live_deduped)
                 except Exception:
                     pass
+                live = [dict(ch, type="LIVE") for ch in live_deduped]
 
                 # VOD: TMDB poster wins, provider poster as fallback
                 vod_list = []

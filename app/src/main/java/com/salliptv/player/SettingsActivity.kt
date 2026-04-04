@@ -75,7 +75,7 @@ class SettingsActivity : AppCompatActivity() {
         premiumManager.init { isPremium ->
             if (isPremium) {
                 binding.tvPremiumStatus.setText(R.string.premium_active)
-                binding.tvPremiumStatus.setTextColor(getColor(R.color.accent))
+                binding.tvPremiumStatus.setTextColor(getColor(R.color.text_primary))
             } else {
                 binding.tvPremiumStatus.setText(R.string.premium_subtitle)
                 binding.tvPremiumStatus.setTextColor(getColor(R.color.text_secondary))
@@ -373,7 +373,7 @@ class SettingsActivity : AppCompatActivity() {
                     "upgrade" -> {
                         binding.tvSyncStatus.setText(R.string.pro_activated_web)
                         binding.tvPremiumStatus.setText(R.string.premium_active)
-                        binding.tvPremiumStatus.setTextColor(getColor(R.color.accent))
+                        binding.tvPremiumStatus.setTextColor(getColor(R.color.text_primary))
                         stopPolling()
                         createLinkAndShowQr()
                     }
@@ -434,7 +434,7 @@ class SettingsActivity : AppCompatActivity() {
             binding.tvSyncStatus.apply {
                 alpha = 0f
                 text = getString(R.string.playlist_synced, pl.name)
-                setTextColor(getColor(R.color.accent))
+                setTextColor(getColor(R.color.text_primary))
                 animate().alpha(1f).setDuration(400).start()
             }
             showLoadingOverlay(
@@ -456,10 +456,11 @@ class SettingsActivity : AppCompatActivity() {
         binding.layoutM3u.visibility = if (xtream) View.GONE else View.VISIBLE
         binding.layoutXtream.visibility = if (xtream) View.VISIBLE else View.GONE
 
-        binding.btnTypeM3u.setBackgroundColor(getColor(if (xtream) R.color.card_dark else R.color.accent))
-        binding.btnTypeM3u.setTextColor(getColor(if (xtream) R.color.text_secondary else R.color.text_primary))
-        binding.btnTypeXtream.setBackgroundColor(getColor(if (xtream) R.color.accent else R.color.card_dark))
-        binding.btnTypeXtream.setTextColor(getColor(if (xtream) R.color.text_primary else R.color.text_secondary))
+        // Active tab: white background with black text; inactive: dark card with gray text
+        binding.btnTypeM3u.setBackgroundColor(getColor(if (xtream) R.color.card_dark else android.R.color.white))
+        binding.btnTypeM3u.setTextColor(getColor(if (xtream) R.color.text_secondary else R.color.background_dark))
+        binding.btnTypeXtream.setBackgroundColor(getColor(if (xtream) android.R.color.white else R.color.card_dark))
+        binding.btnTypeXtream.setTextColor(getColor(if (xtream) R.color.background_dark else R.color.text_secondary))
     }
 
     private fun testConnection() {

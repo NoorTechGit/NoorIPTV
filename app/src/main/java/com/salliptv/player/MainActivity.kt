@@ -939,14 +939,13 @@ class MainActivity : AppCompatActivity() {
                     }
                     "SERIES" -> {
                         Log.d(TAG, "loadHomeSections: loading SERIES groups...")
-                        val groupCounts = db.channelDao().getGroupsWithCountsLimited(currentPlaylistId, "SERIES", 30)
+                        val groupCounts = db.channelDao().getGroupsWithCountsLimited(currentPlaylistId, "SERIES", 200)
                         Log.d(TAG, "loadHomeSections: found ${groupCounts.size} SERIES groups")
                         for (gc in groupCounts) {
                             val channels = db.channelDao().getByGroupLimited(currentPlaylistId, gc.groupTitle, "SERIES", 15)
                             if (channels.isNotEmpty()) {
                                 sections.add(HomeSection(cleanGroupName(gc.groupTitle), channels, SectionType.SERIES, groupName = gc.groupTitle, totalCount = gc.cnt))
                             }
-                            if (sections.size > 15) break
                         }
                     }
                 }

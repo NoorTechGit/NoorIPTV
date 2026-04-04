@@ -1,5 +1,9 @@
 package com.salliptv.player.adapter
 
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.text.style.ReplacementSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +12,39 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.salliptv.player.R
 import com.salliptv.player.model.Channel
+
+/**
+ * Apple TV style pill badge — rounded rect background with text
+ */
+class RoundedBadgeSpan(
+    private val bgColor: Int,
+    private val textColor: Int,
+    private val cornerRadius: Float
+) : ReplacementSpan() {
+
+    override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+        val textWidth = paint.measureText(text, start, end)
+        return (textWidth + cornerRadius * 2).toInt()
+    }
+
+    override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
+        val textWidth = paint.measureText(text, start, end)
+        val totalWidth = textWidth + cornerRadius * 2
+        val height = (bottom - top).toFloat()
+        val badgeHeight = height * 0.8f
+        val badgeTop = top + (height - badgeHeight) / 2
+
+        // Draw pill background
+        val bgPaint = Paint(paint).apply { color = bgColor; isAntiAlias = true }
+        val rect = RectF(x, badgeTop, x + totalWidth, badgeTop + badgeHeight)
+        canvas.drawRoundRect(rect, badgeHeight / 2, badgeHeight / 2, bgPaint)
+
+        // Draw text centered
+        paint.color = textColor
+        val textY = badgeTop + badgeHeight / 2 - (paint.descent() + paint.ascent()) / 2
+        canvas.drawText(text, start, end, x + cornerRadius, textY, paint)
+    }
+}
 
 enum class SectionType {
     CONTINUE_WATCHING,
@@ -120,20 +157,17 @@ class HomeSectionAdapter(
                 && section.sectionType != SectionType.CONTINUE_WATCHING) {
                 val spannable = android.text.SpannableStringBuilder(displayTitle)
                 spannable.append("  ")
-                val badge = android.text.SpannableString(lang)
+                // Apple TV pill badge: dark bg, rounded, generous padding
+                val padded = "  $lang  "
+                val badge = android.text.SpannableString(padded)
                 badge.setSpan(
-                    android.text.style.BackgroundColorSpan(0x30FFFFFF),
-                    0, lang.length,
+                    RoundedBadgeSpan(0xFF2C2C2E.toInt(), 0xB0FFFFFF.toInt(), 14f),
+                    0, padded.length,
                     android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
                 badge.setSpan(
-                    android.text.style.RelativeSizeSpan(0.7f),
-                    0, lang.length,
-                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-                badge.setSpan(
-                    android.text.style.ForegroundColorSpan(0xFFFFFFFF.toInt()),
-                    0, lang.length,
+                    android.text.style.RelativeSizeSpan(0.65f),
+                    0, padded.length,
                     android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
                 spannable.append(badge)
