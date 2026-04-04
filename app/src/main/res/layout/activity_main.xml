@@ -43,11 +43,20 @@
                 android:paddingBottom="10dp">
 
                 <ImageView
-                    android:layout_width="120dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/logo_salliptv"
-                    android:scaleType="fitStart"
-                    android:contentDescription="@string/app_name" />
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_aura_logo"
+                    android:scaleType="fitCenter"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AURA"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="0.3" />
 
                 <View
                     android:layout_width="0dp"
