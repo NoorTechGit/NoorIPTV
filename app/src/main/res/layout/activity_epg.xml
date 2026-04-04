@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Apple TV style EPG Grid
-    Colors: #000000 bg, #1C1C1E cards, #0A84FF accent, #FFFFFF text, #8E8E93 secondary
+    Colors: #000000 bg, #1C1C1E cards, #FFFFFF accent, #FFFFFF text, #8E8E93 secondary
 -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -163,7 +163,7 @@
                 android:id="@+id/view_now_indicator"
                 android:layout_width="2dp"
                 android:layout_height="match_parent"
-                android:background="#0A84FF"
+                android:background="#FFFFFF"
                 android:alpha="0.7" />
         </FrameLayout>
     </LinearLayout>

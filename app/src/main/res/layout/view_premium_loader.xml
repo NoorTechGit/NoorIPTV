@@ -93,7 +93,7 @@
             android:layout_width="240dp"
             android:layout_height="3dp"
             android:indeterminate="true"
-            android:indeterminateTint="#0A84FF"
+            android:indeterminateTint="#FFFFFF"
             android:background="#2C2C2E"
             android:visibility="gone" />
 
@@ -103,7 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0 chaînes"
-            android:textColor="#0A84FF"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:fontFamily="sans-serif-medium"
             android:layout_marginTop="16dp" />

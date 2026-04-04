@@ -47,7 +47,7 @@ class FilterActivity : AppCompatActivity() {
 
         setupButtonFocus(binding.btnShowAll, 0xFF0C1A2E.toInt(), 0xFF0C2438.toInt())
         setupButtonFocus(binding.btnInvert, 0xFF0C1A2E.toInt(), 0xFF0C2438.toInt())
-        setupButtonFocus(binding.btnApply, 0xFF0A84FF.toInt(), 0xFF40D4FF.toInt())
+        setupButtonFocus(binding.btnApply, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt())
 
         loadData()
     }

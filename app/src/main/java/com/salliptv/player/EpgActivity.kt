@@ -330,7 +330,7 @@ class EpgActivity : AppCompatActivity() {
                 setOnFocusChangeListener { v, hasFocus ->
                     if (hasFocus) {
                         v.background = GradientDrawable().apply {
-                            setColor(0xFF0A84FF.toInt())
+                            setColor(0xFFFFFFFF.toInt())
                             cornerRadius = dpToPx(4).toFloat()
                         }
                         (v as TextView).setTextColor(0xFFFFFFFF.toInt())

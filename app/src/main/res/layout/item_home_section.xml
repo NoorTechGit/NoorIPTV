@@ -41,7 +41,7 @@
             android:layout_height="36dp"
             android:gravity="center"
             android:text="Tout voir  \u203A"
-            android:textColor="#0A84FF"
+            android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
             android:focusable="true"

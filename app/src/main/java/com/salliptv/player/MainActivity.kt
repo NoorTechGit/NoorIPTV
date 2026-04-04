@@ -1357,7 +1357,7 @@ class MainActivity : AppCompatActivity() {
             icon ?: continue
             if (icon === activeIcon) {
                 icon.alpha = 1f
-                icon.setColorFilter(0xFF0A84FF.toInt()) // indigo tint
+                icon.setColorFilter(0xFFFFFFFF.toInt()) // indigo tint
             } else {
                 icon.alpha = 0.5f
                 icon.setColorFilter(0xFF8E8E93.toInt()) // gray tint
@@ -1842,7 +1842,7 @@ class MainActivity : AppCompatActivity() {
             val d = GradientDrawable()
             d.cornerRadius = epgDp(4).toFloat()
             if (f) {
-                d.setColor(0xFF0A84FF.toInt())
+                d.setColor(0xFFFFFFFF.toInt())
                 (v as TextView).setTextColor(0xFFFFFFFF.toInt())
                 if (ch != null) epgShowInfo(ch, title, time)
             } else {

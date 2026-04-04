@@ -3,14 +3,14 @@
 
     <!-- Base style: override the ugly teal/green focus color everywhere -->
     <style name="BaseTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:colorPrimary">#0A84FF</item>
-        <item name="android:colorAccent">#0A84FF</item>
-        <item name="colorPrimary">#0A84FF</item>
-        <item name="colorAccent">#0A84FF</item>
+        <item name="android:colorPrimary">#FFFFFF</item>
+        <item name="android:colorAccent">#FFFFFF</item>
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorAccent">#FFFFFF</item>
         <item name="colorControlHighlight">#00000000</item>
         <item name="android:colorControlHighlight">#00000000</item>
         <item name="android:colorFocusedHighlight">#00000000</item>
-        <item name="android:colorControlActivated">#0A84FF</item>
+        <item name="android:colorControlActivated">#FFFFFF</item>
         <item name="android:defaultFocusHighlightEnabled">false</item>
     </style>
 
@@ -112,8 +112,8 @@
         <item name="android:windowBackground">@drawable/bg_quality_dialog</item>
         <item name="android:textColorPrimary">#FFFFFF</item>
         <item name="android:textColorSecondary">#8E8E93</item>
-        <item name="android:colorAccent">#0A84FF</item>
-        <item name="colorAccent">#0A84FF</item>
+        <item name="android:colorAccent">#FFFFFF</item>
+        <item name="colorAccent">#FFFFFF</item>
         <item name="android:listPreferredItemHeight">48dp</item>
         <item name="android:titleTextColor">#FFFFFF</item>
         <item name="android:textColorAlertDialogListItem">#FFFFFF</item>

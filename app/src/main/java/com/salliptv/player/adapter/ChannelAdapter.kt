@@ -183,7 +183,7 @@ class ChannelAdapter(
 
         holder.tvPlaying?.apply {
             text = if (isSelected) "\u25B6" else ""
-            setTextColor(0xFF0A84FF.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
         }
 
         holder.itemView.setBackgroundColor(if (isSelected) 0x15FFFFFF else Color.TRANSPARENT)
