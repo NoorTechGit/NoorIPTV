@@ -284,7 +284,9 @@ class PlayerActivity : AppCompatActivity() {
         tvOverlayTitle = findViewById(R.id.tv_overlay_title)
         tvOverlayCount = findViewById(R.id.tv_overlay_count)
         overlayAdapter = OverlayChannelAdapter()
-        rvOverlayChannels.layoutManager = LinearLayoutManager(this)
+        // Center-focused scroll: focused item stays in the middle (TiViMate style)
+        rvOverlayChannels.layoutManager = com.salliptv.player.util.CenterFocusLayoutManager(this)
+        com.salliptv.player.util.CenterFocusLayoutManager.attachCenterFocus(rvOverlayChannels)
         rvOverlayChannels.adapter = overlayAdapter
 
         tvNumberInput = findViewById(R.id.tv_number_input)

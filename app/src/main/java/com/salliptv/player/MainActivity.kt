@@ -217,7 +217,8 @@ class MainActivity : AppCompatActivity() {
         // Setup RecyclerViews
         categoryAdapter = CategoryAdapter()
         if (isLandscape) {
-            rvCategories.layoutManager = LinearLayoutManager(this) // vertical sidebar
+            rvCategories.layoutManager = com.salliptv.player.util.CenterFocusLayoutManager(this)
+            com.salliptv.player.util.CenterFocusLayoutManager.attachCenterFocus(rvCategories)
         } else {
             rvCategories.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         }
@@ -226,7 +227,8 @@ class MainActivity : AppCompatActivity() {
         channelAdapter = ChannelAdapter()
         if (isLandscape) {
             channelAdapter.setListMode(true)
-            rvChannels.layoutManager = LinearLayoutManager(this)
+            rvChannels.layoutManager = com.salliptv.player.util.CenterFocusLayoutManager(this)
+            com.salliptv.player.util.CenterFocusLayoutManager.attachCenterFocus(rvChannels)
         } else {
             rvChannels.layoutManager = GridLayoutManager(this, 3)
         }
@@ -552,8 +554,9 @@ class MainActivity : AppCompatActivity() {
             liveListContainer?.visibility = View.VISIBLE
             channelAdapter.setListMode(true)
             channelAdapter.setPosterMode(false)
-            if (rvChannels.layoutManager !is LinearLayoutManager || rvChannels.layoutManager is GridLayoutManager) {
-                rvChannels.layoutManager = LinearLayoutManager(this)
+            if (rvChannels.layoutManager !is com.salliptv.player.util.CenterFocusLayoutManager) {
+                rvChannels.layoutManager = com.salliptv.player.util.CenterFocusLayoutManager(this)
+                com.salliptv.player.util.CenterFocusLayoutManager.attachCenterFocus(rvChannels)
             }
             loadCategories()
             loadChannels()
