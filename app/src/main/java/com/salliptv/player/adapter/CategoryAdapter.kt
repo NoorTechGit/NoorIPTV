@@ -16,6 +16,10 @@ class CategoryAdapter(
     // Backward-compatible setter
     fun setOnCategoryClickListener(listener: (String, Int) -> Unit) { onCategoryClick = listener }
 
+    // Debounce: only trigger after user stops scrolling for 300ms
+    private var debounceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingRunnable: Runnable? = null
+
     private var categories: List<String> = emptyList()
     private var counts: List<Int> = emptyList()
     var selectedPosition: Int = 0
@@ -64,10 +68,14 @@ class CategoryAdapter(
                 v.setBackgroundColor(0x30FFFFFF)
                 holder.tvName.setTextColor(Color.WHITE)
                 holder.tvCount.setTextColor(0xCCFFFFFF.toInt())
-                // Auto-select on focus (like TiViMate)
+                // Auto-select on focus with debounce (300ms)
                 if (position != selectedPosition) {
-                    onCategoryClick(category, position)
-                    setSelectedPosition(position)
+                    pendingRunnable?.let { debounceHandler.removeCallbacks(it) }
+                    pendingRunnable = Runnable {
+                        onCategoryClick(category, position)
+                        setSelectedPosition(position)
+                    }
+                    debounceHandler.postDelayed(pendingRunnable!!, 300)
                 }
             } else {
                 applySelectionState(holder, position == selectedPosition)
