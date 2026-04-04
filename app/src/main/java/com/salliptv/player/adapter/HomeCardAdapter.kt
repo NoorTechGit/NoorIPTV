@@ -170,15 +170,10 @@ class HomeCardAdapter(
                 val hasPoster = !channel.posterUrl.isNullOrEmpty() || !channel.backdropUrl.isNullOrEmpty()
                 val request = Glide.with(itemView.context).load(thumbImage)
                     .placeholder(R.drawable.bg_card_normal).error(R.drawable.bg_card_normal)
-                if (hasPoster) {
-                    ivThumb.setPadding(0, 0, 0, 0)
-                    request.centerCrop().into(ivThumb)
-                } else {
-                    // Logo only — add padding so it doesn't fill the entire card
-                    val pad = (16 * itemView.context.resources.displayMetrics.density).toInt()
-                    ivThumb.setPadding(pad, pad, pad, pad)
-                    request.fitCenter().into(ivThumb)
-                }
+                // Always fill the card — no empty space, no padding
+                ivThumb.setPadding(0, 0, 0, 0)
+                ivThumb.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                request.into(ivThumb)
             } else ivThumb?.setImageResource(R.drawable.bg_card_normal)
         }
 
