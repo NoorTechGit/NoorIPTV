@@ -35,9 +35,18 @@ class CenterFocusLayoutManager(context: Context) : LinearLayoutManager(context) 
         fun attachCenterFocus(recyclerView: RecyclerView) {
             recyclerView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
                 if (newFocus != null) {
-                    var pos = recyclerView.getChildAdapterPosition(newFocus)
-                    if (pos < 0 && newFocus.parent is View) {
-                        pos = recyclerView.getChildAdapterPosition(newFocus.parent as View)
+                    // Only handle focus changes within OUR RecyclerView
+                    var view: android.view.View? = newFocus
+                    var isOurChild = false
+                    while (view != null) {
+                        if (view === recyclerView) { isOurChild = true; break }
+                        view = view.parent as? android.view.View
+                    }
+                    if (!isOurChild) return@addOnGlobalFocusChangeListener
+
+                    var pos = try { recyclerView.getChildAdapterPosition(newFocus) } catch (_: Exception) { -1 }
+                    if (pos < 0 && newFocus.parent is android.view.View) {
+                        pos = try { recyclerView.getChildAdapterPosition(newFocus.parent as android.view.View) } catch (_: Exception) { -1 }
                     }
                     if (pos >= 0) {
                         val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return@addOnGlobalFocusChangeListener
