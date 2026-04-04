@@ -958,9 +958,33 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private val epgCache = mutableMapOf<String, String>() // channelName → current program title
+    private val epgCache = mutableMapOf<String, String>()
+    private var xtreamApi: com.salliptv.player.parser.XtreamApi? = null
+
+    private fun initXtreamForEpg() {
+        if (xtreamApi != null) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            val pl = db.playlistDao().getById(currentPlaylistId) ?: return@launch
+            if (pl.type == "XTREAM" && !pl.url.isNullOrEmpty()) {
+                xtreamApi = com.salliptv.player.parser.XtreamApi(pl.url!!, pl.username ?: "", pl.password ?: "")
+            } else if (pl.type == "M3U" && !pl.url.isNullOrEmpty()) {
+                val url = pl.url!!
+                val userMatch = Regex("[?&]username=([^&]+)").find(url)
+                val passMatch = Regex("[?&]password=([^&]+)").find(url)
+                if (userMatch != null && passMatch != null) {
+                    xtreamApi = com.salliptv.player.parser.XtreamApi(
+                        url.substringBefore("/get.php"),
+                        userMatch.groupValues[1],
+                        passMatch.groupValues[1]
+                    )
+                }
+            }
+        }
+    }
 
     private fun loadEpgForChannelList(channels: List<Channel>) {
+        initXtreamForEpg()
+
         val client = okhttp3.OkHttpClient.Builder()
             .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
@@ -968,37 +992,64 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val now = System.currentTimeMillis() / 1000
+            var updated = 0
+
             for (ch in channels) {
                 val name = ch.cleanName ?: ch.name ?: continue
-                if (epgCache.containsKey(name)) continue // Already cached
+                if (epgCache.containsKey(name)) continue
 
+                // Try 1: Backend EPG (fast, from Redis)
                 try {
                     val url = "https://salliptv.com/api/epg/by-name/${java.net.URLEncoder.encode(name, "UTF-8")}"
                     val response = client.newCall(okhttp3.Request.Builder().url(url).build()).execute()
                     if (response.isSuccessful) {
-                        val body = response.body?.string() ?: continue
+                        val body = response.body?.string() ?: ""
                         val json = com.google.gson.JsonParser.parseString(body).asJsonObject
-                        val programs = json.getAsJsonArray("programs") ?: continue
-                        for (p in programs) {
-                            val prog = p.asJsonObject
-                            val start = prog.get("start")?.asLong ?: continue
-                            val end = prog.get("end")?.asLong ?: continue
-                            if (start <= now && end >= now) {
-                                epgCache[name] = prog.get("title")?.asString ?: ""
-                                break
+                        val programs = json.getAsJsonArray("programs")
+                        if (programs != null && programs.size() > 0) {
+                            for (p in programs) {
+                                val prog = p.asJsonObject
+                                val start = prog.get("start")?.asLong ?: continue
+                                val end = prog.get("end")?.asLong ?: continue
+                                if (start <= now && end >= now) {
+                                    epgCache[name] = prog.get("title")?.asString ?: ""
+                                    updated++
+                                    break
+                                }
                             }
                         }
-                        if (!epgCache.containsKey(name)) epgCache[name] = "" // No current program
                     }
                 } catch (_: Exception) {}
+
+                // Try 2: Xtream API (if backend had nothing)
+                if (!epgCache.containsKey(name) && xtreamApi != null && ch.streamId > 0) {
+                    try {
+                        val programs = xtreamApi!!.getEpg(ch.streamId)
+                        val current = programs.firstOrNull { it.startTime <= now && it.endTime >= now }
+                        if (current != null) {
+                            epgCache[name] = current.title ?: ""
+                            updated++
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                if (!epgCache.containsKey(name)) epgCache[name] = ""
+
+                // Refresh UI every 10 channels
+                if (updated > 0 && updated % 10 == 0) {
+                    withContext(Dispatchers.Main) {
+                        for ((n, t) in epgCache) {
+                            if (t.isNotEmpty()) channelAdapter.updateEpg(n, t)
+                        }
+                        channelAdapter.refreshEpgViews()
+                    }
+                }
             }
 
-            // Push EPG into adapter and refresh
+            // Final refresh
             withContext(Dispatchers.Main) {
-                for ((name, title) in epgCache) {
-                    if (title.isNotEmpty()) {
-                        channelAdapter.updateEpg(name, title)
-                    }
+                for ((n, t) in epgCache) {
+                    if (t.isNotEmpty()) channelAdapter.updateEpg(n, t)
                 }
                 channelAdapter.refreshEpgViews()
             }

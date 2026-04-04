@@ -35,12 +35,30 @@ EPG_TTL = 48 * 3600  # 48 hours
 
 # Open source EPG sources — multiple for better coverage
 EPG_SOURCES = [
-    # France + international
+    # ALL SOURCES COMBINED (broadest coverage)
+    "https://epgshare01.online/epgshare01/epg_ripper_ALL_SOURCES1.xml.gz",
+    # France
     "https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz",
-    # Global EPG (huge, covers many countries)
-    "http://epg.51zmt.top:8000/e.xml.gz",
-    # mjh.nz (good coverage)
+    # UK
+    "https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz",
+    # Germany
+    "https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz",
+    # Spain
+    "https://epgshare01.online/epgshare01/epg_ripper_ES1.xml.gz",
+    # Italy
+    "https://epgshare01.online/epgshare01/epg_ripper_IT1.xml.gz",
+    # Turkey
+    "https://epgshare01.online/epgshare01/epg_ripper_TR1.xml.gz",
+    # Arabic
+    "https://epgshare01.online/epgshare01/epg_ripper_AR1.xml.gz",
+    # Arabic dedicated (MBC, Rotana, Al Jazeera)
+    "https://raw.githubusercontent.com/MuazT/EPG-Guide/master/ArabicEPG.xml",
+    # UK Freeview (BBC, ITV, Channel 4)
+    "https://raw.githubusercontent.com/dp247/Freeview-EPG/master/epg.xml",
+    # Global (AU/NZ/streaming)
     "https://raw.githubusercontent.com/matthuisman/i.mjh.nz/master/all/epg.xml.gz",
+    # Global Chinese
+    "http://epg.51zmt.top:8000/e.xml.gz",
 ]
 
 _redis = None
