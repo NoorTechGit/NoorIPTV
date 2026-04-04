@@ -64,6 +64,11 @@ class CategoryAdapter(
                 v.setBackgroundColor(0x30FFFFFF)
                 holder.tvName.setTextColor(Color.WHITE)
                 holder.tvCount.setTextColor(0xCCFFFFFF.toInt())
+                // Auto-select on focus (like TiViMate)
+                if (position != selectedPosition) {
+                    onCategoryClick(category, position)
+                    setSelectedPosition(position)
+                }
             } else {
                 applySelectionState(holder, position == selectedPosition)
             }
