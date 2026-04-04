@@ -61,29 +61,14 @@
             android:paddingStart="24dp"
             android:paddingEnd="24dp">
 
-            <!-- App logo: AURA halo with glow effect -->
-            <FrameLayout
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="8dp">
-
-                <!-- Glow layer (blurred, larger, dimmer) -->
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_aura_logo"
-                    android:scaleType="fitCenter"
-                    android:alpha="0.5" />
-
-                <!-- Sharp layer -->
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_aura_logo"
-                    android:scaleType="fitCenter" />
-            </FrameLayout>
+            <!-- App logo: AURA halo -->
+            <ImageView
+                android:id="@+id/iv_aura_logo"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_aura_logo"
+                android:scaleType="fitCenter"
+                android:layout_marginEnd="8dp" />
 
             <TextView
                 android:layout_width="wrap_content"
