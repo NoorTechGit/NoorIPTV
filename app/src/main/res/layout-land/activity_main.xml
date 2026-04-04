@@ -61,13 +61,22 @@
             android:paddingStart="24dp"
             android:paddingEnd="24dp">
 
-            <!-- App logo -->
+            <!-- App logo: AURA halo + text -->
             <ImageView
-                android:layout_width="140dp"
-                android:layout_height="26dp"
-                android:src="@drawable/logo_salliptv"
-                android:scaleType="fitStart"
-                android:contentDescription="@string/app_name"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_aura_logo"
+                android:scaleType="fitCenter"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AURA"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-light"
+                android:letterSpacing="0.3"
                 android:layout_marginEnd="24dp" />
 
             <!-- Tabs — inline (no HorizontalScrollView needed on wide TV screen) -->

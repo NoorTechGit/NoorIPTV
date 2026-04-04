@@ -1,39 +1,36 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="120dp"
-    android:height="120dp"
+    android:width="28dp"
+    android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- Outer glow -->
+    <!-- Outer glow (soft, wide) -->
     <path
-        android:name="halo_glow"
         android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2"
-        android:strokeWidth="3"
+        android:strokeWidth="3.5"
         android:strokeColor="#30C8E0F0"
         android:strokeLineCap="round"
         android:fillColor="@android:color/transparent"
-        android:trimPathEnd="0"
+        android:trimPathEnd="0.92"
         android:trimPathOffset="0.42" />
 
     <!-- Mid glow -->
     <path
-        android:name="halo_mid"
         android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2"
-        android:strokeWidth="1.8"
-        android:strokeColor="#50D0E8F8"
+        android:strokeWidth="2"
+        android:strokeColor="#60D0E8F8"
         android:strokeLineCap="round"
         android:fillColor="@android:color/transparent"
-        android:trimPathEnd="0"
+        android:trimPathEnd="0.92"
         android:trimPathOffset="0.42" />
 
-    <!-- Core ring -->
+    <!-- Core ring (white) -->
     <path
-        android:name="halo_path"
         android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2"
-        android:strokeWidth="0.8"
+        android:strokeWidth="1.0"
         android:strokeColor="#E8F0F8"
         android:strokeLineCap="round"
         android:fillColor="@android:color/transparent"
-        android:trimPathEnd="0"
+        android:trimPathEnd="0.92"
         android:trimPathOffset="0.42" />
 </vector>
